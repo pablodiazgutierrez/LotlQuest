@@ -115,29 +115,29 @@ const LOTLS = [
   { id: 'mochi', name: 'Mochi', body: '#fff3f5', fin: '#ff4d4d', gill: '#ff2d55', trail: '#ffb3c1',
     blurb: 'Squishy + kind. Heals the team.',
     powerName: 'MOCHI BOUNCE', powerIcon: '💗',
-    tip: 'Refills a heart and blasts everything away.' },
-  { id: 'cal', name: 'Cal', body: '#f2f2f5', fin: '#8e44e8', gill: '#2b2b33',
+    tip: "Refills everyone's heart and blasts nearby danger away." },
+  { id: 'coal', name: 'Coal', body: '#f2f2f5', fin: '#8e44e8', gill: '#2b2b33',
     trail: '#c9a6ff', blurb: 'Cool and clever. Bubble machine.',
     powerName: 'BUBBLE STORM', powerIcon: '🫧',
     tip: 'Fires bubbles in every direction at once.' },
-  { id: 'mataa', name: 'Mataa', body: '#c8f08a', fin: '#3faa3f', gill: '#1f7a1f', trail: '#9be36b',
+  { id: 'matcha', name: 'Matcha', body: '#c8f08a', fin: '#3faa3f', gill: '#1f7a1f', trail: '#9be36b',
     blurb: 'Fast and brave. Vine puncher.',
     powerName: 'VINE BEAM', powerIcon: '🌿',
-    tip: 'A giant green beam right through everything.' },
+    tip: 'A giant green beam in the direction you face.' },
   { id: 'storm', name: 'Storm', body: '#2a2a3a', fin: '#5b5bff', gill: '#9b7bff', trail: '#8f8fff',
     blurb: 'Mysterious. Made of thunder.',
     powerName: 'THUNDER', powerIcon: '⚡',
-    tip: 'Lightning zaps every enemy on the screen.' },
+    tip: 'Lightning zaps every nearby enemy.' },
   // the two extra lotls from the big battle drawing — earned by playing
   { id: 'blaze', name: 'Blaze', body: '#ffe14d', fin: '#ff8a1f', gill: '#ff5e00', trail: '#ffc46b',
     blurb: 'Loud, hot, always first into the fight.',
     powerName: 'FIRE BLAST', powerIcon: '🔥',
-    tip: 'A huge spray of fireballs straight ahead.',
+    tip: 'A huge spray of fireballs in the direction you face.',
     unlock: { kind: 'orbs', n: 250, label: 'Collect 250 orbs' } },
   { id: 'splash', name: 'Splash', body: '#8fd4ff', fin: '#ffe14d', gill: '#2f8fd6', trail: '#bfe9ff',
     blurb: 'Makes the whole sea come to you.',
     powerName: 'WHIRLPOOL', powerIcon: '🌀',
-    tip: 'Sucks EVERY orb on the screen right into you.',
+    tip: 'Sucks every nearby orb right into you.',
     unlock: { kind: 'stage', n: 3, label: 'Reach stage 3' } }
 ];
 
@@ -185,6 +185,7 @@ function makePlayer(lotlIndex, slot) {
     inv: 90, cool: 0, power: 0, powerMax: 100,
     alive: true, downTimer: 0,
     pointerId: null, tail: 0, bob: rnd(0, TAU),
+    facing: 1, aimTarget: null,
     kills: 0, orbs: 0
   };
 }
@@ -518,6 +519,12 @@ function floatText(x, y, text, color) {
 /* ============================================================
    POWERS
    ============================================================ */
+const POWER_RANGE = 460;
+
+function inPowerRange(p, target, range) {
+  return !!target && dist2(p.x, p.y, target.x, target.y) <= (range || POWER_RANGE) ** 2;
+}
+
 function firePower(p) {
   if (!p || !p.alive || p.power < p.powerMax) return;
   p.power = 0;
@@ -526,42 +533,61 @@ function firePower(p) {
   const id = p.lotl.id;
 
   if (id === 'mochi') {
-    if (p.hearts < p.maxHearts) { p.hearts++; Snd.heal(); floatText(p.x, p.y - 60, '+1 ❤️', '#ff4d6d'); }
+    let healed = false;
+    for (const teammate of G.players) {
+      if (!teammate.alive || teammate.hearts >= teammate.maxHearts) continue;
+      teammate.hearts++;
+      healed = true;
+      floatText(teammate.x, teammate.y - 60, '+1 ❤️', '#ff4d6d');
+    }
+    if (healed) Snd.heal();
     ring(p.x, p.y, '#ff9ec4', 520);
-    G.ebullets.length = 0;
-    for (const f of G.foes) if (dist2(f.x, f.y, p.x, p.y) < 420 * 420) hurtFoe(f, 4, p);
-  } else if (id === 'cal') {
+    G.ebullets = G.ebullets.filter(b => !inPowerRange(p, b));
+    for (const f of G.foes) if (inPowerRange(p, f)) hurtFoe(f, 4, p);
+  } else if (id === 'coal') {
     for (let i = 0; i < 26; i++) {
       const a = (i / 26) * TAU;
-      G.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 12, dmg: 2, owner: p, kind: 'bubble', life: 120 });
+      G.bullets.push({ x: p.x, y: p.y, startX: p.x, startY: p.y, maxDist: POWER_RANGE,
+        vx: Math.cos(a) * 9, vy: Math.sin(a) * 9, r: 12, dmg: 2, owner: p, kind: 'bubble', life: 120 });
     }
     ring(p.x, p.y, '#c9a6ff', 300);
-  } else if (id === 'mataa') {
-    G.fx.push({ x: p.x, y: p.y, kind: 'beam', life: 40, t: 0, color: '#8ef06a' });
-    for (const f of G.foes) if (Math.abs(f.y - p.y) < 90 && f.x > p.x) hurtFoe(f, 10, p);
-    if (G.boss && Math.abs(G.boss.y - p.y) < 150) hurtBoss(14, p);
+  } else if (id === 'matcha') {
+    G.fx.push({ x: p.x, y: p.y, dir: p.facing, max: POWER_RANGE, kind: 'beam', life: 40, t: 0, color: '#8ef06a' });
+    for (const f of G.foes) {
+      const ahead = (f.x - p.x) * p.facing > 0;
+      if (ahead && Math.abs(f.y - p.y) < 90 && inPowerRange(p, f)) hurtFoe(f, 10, p);
+    }
+    if (G.boss && (G.boss.x - p.x) * p.facing > 0 && Math.abs(G.boss.y - p.y) < 150 && inPowerRange(p, G.boss)) hurtBoss(14, p);
     ring(p.x, p.y, '#9be36b', 220);
   } else if (id === 'blaze') {
     for (let i = 0; i < 16; i++) {
-      const a = (i - 7.5) * 0.075;
-      G.bullets.push({ x: p.x, y: p.y, vx: Math.cos(a) * 13, vy: Math.sin(a) * 13,
+      const a = (p.facing < 0 ? Math.PI : 0) + (i - 7.5) * 0.075;
+      G.bullets.push({ x: p.x, y: p.y, startX: p.x, startY: p.y, maxDist: POWER_RANGE,
+        vx: Math.cos(a) * 13, vy: Math.sin(a) * 13,
         r: 15, dmg: 3, owner: p, kind: 'bubble', life: 110 });
     }
     ring(p.x, p.y, '#ff8a1f', 260);
     G.shake = 18;
   } else if (id === 'splash') {
-    // the whole sea comes to you — a giant combo in one tap
+    // nearby orbs come to you — save it for the densest part of an Orb Rush
     let n = 0;
     for (const o of G.orbs) {
+      if (!inPowerRange(p, o)) continue;
       o.vx = (p.x - o.x) * 0.09; o.vy = (p.y - o.y) * 0.09;   // yanked in, collected on arrival
       n++;
     }
-    for (const f of G.foes) if (dist2(f.x, f.y, p.x, p.y) < 380 * 380) hurtFoe(f, 3, p);
-    ring(p.x, p.y, '#8fd4ff', 620);
+    for (const f of G.foes) if (inPowerRange(p, f)) hurtFoe(f, 3, p);
+    ring(p.x, p.y, '#8fd4ff', POWER_RANGE);
     floatText(p.x, p.y - 70, n + ' orbs!', '#2f8fd6');
   } else if (id === 'storm') {
-    for (const f of G.foes) { G.fx.push({ x: f.x, y: f.y, kind: 'bolt', life: 22, t: 0, color: '#a9a9ff' }); hurtFoe(f, 8, p); }
-    if (G.boss) { hurtBoss(12, p); G.fx.push({ x: G.boss.x, y: G.boss.y, kind: 'bolt', life: 26, t: 0, color: '#a9a9ff' }); }
+    for (const f of G.foes) if (inPowerRange(p, f)) {
+      G.fx.push({ x: f.x, y: f.y, kind: 'bolt', life: 22, t: 0, color: '#a9a9ff' });
+      hurtFoe(f, 8, p);
+    }
+    if (G.boss && inPowerRange(p, G.boss)) {
+      hurtBoss(12, p);
+      G.fx.push({ x: G.boss.x, y: G.boss.y, kind: 'bolt', life: 26, t: 0, color: '#a9a9ff' });
+    }
     ring(p.x, p.y, '#8f8fff', 460);
     G.shake = 20;
   }
@@ -636,6 +662,20 @@ function hurtPlayer(p) {
 
 const livingPlayers = () => G.players.filter(p => p.alive);
 
+function findAutoTarget(p) {
+  let target = null, best = Infinity;
+  for (const f of G.foes) {
+    if (f.dead) continue;
+    const d = dist2(p.x, p.y, f.x, f.y);
+    if (d < best) { best = d; target = f; }
+  }
+  if (G.boss && G.boss.mode === 'fight') {
+    const d = dist2(p.x, p.y, G.boss.x, G.boss.y);
+    if (d < best) target = G.boss;
+  }
+  return target;
+}
+
 function gameOver() {
   G.screen = 'over';
   if (G.score > save.best) { save.best = G.score; }
@@ -702,13 +742,23 @@ function update(dt) {
     p.x = clamp(p.x + p.vx * dt, 40, W - 40);
     p.y = clamp(p.y + p.vy * dt, 46, H - 120);
     p.tail = sp;
+    if (Math.abs(p.vx) > 0.35) p.facing = p.vx < 0 ? -1 : 1;
+    p.aimTarget = findAutoTarget(p);
 
-    // auto-fire: no fire button for little hands
+    // auto-fire targets the nearest danger, even when it is behind you
     p.cool -= dt;
     if (p.cool <= 0) {
       p.cool = 15;
       const c = p.lotl;
-      G.bullets.push({ x: p.x + 34, y: p.y + 4, vx: 15, vy: 0, r: 10, dmg: 1, owner: p, kind: 'trident', life: 140, color: c.fin });
+      let dx = p.facing, dy = 0;
+      if (p.aimTarget) {
+        dx = p.aimTarget.x - p.x;
+        dy = p.aimTarget.y - p.y;
+        const d = Math.hypot(dx, dy) || 1;
+        dx /= d; dy /= d;
+      }
+      G.bullets.push({ x: p.x + dx * 34, y: p.y + dy * 34, vx: dx * 15, vy: dy * 15,
+        r: 10, dmg: 1, owner: p, kind: 'trident', life: 140, color: c.fin });
       Snd.shoot();
     }
 
@@ -763,6 +813,7 @@ function update(dt) {
     const b = G.bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
     let gone = b.life <= 0 || b.x > W + 60 || b.x < -60 || b.y < -60 || b.y > H + 60;
+    if (!gone && b.maxDist && dist2(b.x, b.y, b.startX, b.startY) > b.maxDist ** 2) gone = true;
     if (!gone) {
       for (const f of G.foes) {
         if (f.dead) continue;
@@ -1113,6 +1164,25 @@ function drawEntities() {
   for (const f of G.foes) drawFoe(f);
   if (G.boss) drawBoss(G.boss);
 
+  // a small crosshair shows what each auto-firing trident is aiming at
+  for (const p of G.players) {
+    const target = p.aimTarget;
+    if (!p.alive || !target || target.dead || target.hp <= 0) continue;
+    const rr = target.r * 0.72 + Math.sin(G.t * 0.12 + p.slot) * 3;
+    ctx.save();
+    ctx.strokeStyle = p.slot === 0 ? 'rgba(58,160,255,0.78)' : 'rgba(255,176,32,0.78)';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(target.x, target.y, rr, 0, TAU); ctx.stroke();
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(target.x + Math.cos(a) * (rr - 8), target.y + Math.sin(a) * (rr - 8));
+      ctx.lineTo(target.x + Math.cos(a) * (rr + 8), target.y + Math.sin(a) * (rr + 8));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // bullets
   for (const b of G.bullets) {
     if (b.kind === 'bubble') {
@@ -1121,6 +1191,7 @@ function drawEntities() {
       ctx.strokeStyle = '#6a35c9'; ctx.lineWidth = 2.5; ctx.stroke();
     } else {
       ctx.save(); ctx.translate(b.x, b.y);
+      ctx.rotate(Math.atan2(b.vy, b.vx));
       ctx.strokeStyle = b.color || '#fff'; ctx.lineWidth = 6; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(-14, 0); ctx.lineTo(10, 0); ctx.stroke();
       ctx.lineWidth = 4;
@@ -1142,11 +1213,12 @@ function drawEntities() {
     // swim trail
     ctx.globalAlpha = 0.25; ctx.fillStyle = p.lotl.trail;
     for (let i = 1; i <= 3; i++) {
-      ctx.beginPath(); ctx.arc(p.x - i * 16, p.y + Math.sin(p.bob - i) * 4, p.r * (1 - i * 0.22), 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x - p.facing * i * 16, p.y + Math.sin(p.bob - i) * 4, p.r * (1 - i * 0.22), 0, TAU); ctx.fill();
     }
     ctx.globalAlpha = 1;
     drawLotl(p.x, p.y + Math.sin(p.bob) * 4, p.r, p.lotl, {
-      t: G.t, seed: p.slot + 2, trident: true, tilt: clamp(p.vy * 0.02, -0.35, 0.35)
+      t: G.t, seed: p.slot + 2, trident: true, flip: p.facing < 0,
+      tilt: p.facing * clamp(p.vy * 0.02, -0.35, 0.35)
     });
     if (G.players.length > 1) {
       ctx.fillStyle = p.slot === 0 ? '#3aa0ff' : '#ffb020';
@@ -1189,9 +1261,10 @@ function drawEntities() {
     } else if (e.kind === 'beam') {
       ctx.fillStyle = e.color;
       const h = 90 * (k * 0.6 + 0.4);
-      ctx.fillRect(e.x, e.y - h / 2, W - e.x, h);
+      const beamW = (e.max || POWER_RANGE) * (e.dir || 1);
+      ctx.fillRect(e.x, e.y - h / 2, beamW, h);
       ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(e.x, e.y - h / 6, W - e.x, h / 3);
+      ctx.fillRect(e.x, e.y - h / 6, beamW, h / 3);
     } else if (e.kind === 'bolt') {
       ctx.strokeStyle = e.color; ctx.lineWidth = 7; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(e.x + rnd(-8, 8), 0);
@@ -1516,13 +1589,13 @@ function drawHelp() {
 
   // left column — the goal and the controls
   heading('WHAT TO DO', lx, y, '🎯'); y += 30;
-  y = line('Swim around and grab the purple orbs. Your trident shoots by itself — you just dodge and collect.', lx, y); y += 12;
+  y = line('Swim around and grab the purple orbs. Your trident targets the nearest enemy and can shoot backward too — you just dodge and collect.', lx, y); y += 12;
   y = line('Every stage ends with the Magma Lotl boss. Beat it, get a heart back, and the next stage begins. It never ends — go as far as you can.', lx, y); y += 26;
 
   heading('CONTROLS', lx, y, '🎮'); y += 30;
   y = line('On a tablet:  put a finger anywhere and drag. Your lotl follows it.', lx, y, '#8fd4ff'); y += 8;
   y = line('On a computer:  arrow keys or WASD to swim.', lx, y, '#8fd4ff'); y += 8;
-  y = line('Big round button (or the SPACE bar) fires your special power once it glows.', lx, y, '#8fd4ff'); y += 8;
+  y = line('Big round button (or the SPACE bar) fires your special power once it glows. Powers only reach nearby enemies.', lx, y, '#8fd4ff'); y += 8;
   y = line('Two players, one keyboard:  P1 uses the ARROW KEYS + SPACE, P2 uses W A S D + Q.', lx, y, '#ffd166'); y += 8;
   y = line('Two players, one tablet:  each of you drags with one finger, and each has your own round power button.', lx, y, '#ffd166'); y += 8;
   y = line('In menus:  ← → to pick a lotl, ENTER to start, 2 for two players, ESC to go back.', lx, y, '#8fd4ff');

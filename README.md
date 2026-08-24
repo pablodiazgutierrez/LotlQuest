@@ -1,7 +1,7 @@
 # Lotl Quest
 
 A swim-and-zap game for lotlquest.com, built from the drawings: four axolotls named
-**Mochi**, **Cal**, **Mataa**, and **Storm**, purple orbs, tridents, and a red lava sea.
+**Mochi**, **Coal**, **Matcha**, and **Storm**, purple orbs, tridents, and a red lava sea.
 
 Everything is in `index.html`. No build, no dependencies, no server needed.
 
@@ -30,7 +30,7 @@ There's a **?** button on the title, roster, and pause screens.
 ## How it plays
 
 - **Drag anywhere** to swim. The lotl follows your finger — that's the whole control scheme.
-- **The trident fires by itself.** No fire button; little hands stay free to dodge.
+- **The trident fires by itself.** It targets the nearest enemy, including enemies behind you, so little hands stay free to dodge.
 - **Purple orbs** are the points, and they charge the power meter. Orbs magnet toward you when close, so near-misses still feel good.
 - **Big round button, bottom-left** = the special power, once it hits 100%.
 - 3 hearts, long invincibility flash after a hit, and hitting an enemy also hurts it — mistakes cost something but never feel unfair.
@@ -45,12 +45,12 @@ Locked cards show as a `?` silhouette with a progress bar, which is the whole ho
 
 | Lotl | Power | What it does | How you get it |
 |---|---|---|---|
-| Mochi | 💗 Mochi Bounce | Refills a heart, clears enemy shots, shockwave | start |
-| Cal | 🫧 Bubble Storm | 26 bubbles in every direction | start |
-| Mataa | 🌿 Vine Beam | Giant green beam across the screen | start |
-| Storm | ⚡ Thunder | Lightning hits every enemy at once | start |
-| Blaze | 🔥 Fire Blast | Huge spray of fireballs straight ahead | collect 250 orbs |
-| Splash | 🌀 Whirlpool | Sucks **every orb on screen** into you | reach stage 3 |
+| Mochi | 💗 Mochi Bounce | Refills a heart for every teammate, clears nearby enemy shots, shockwave | start |
+| Coal | 🫧 Bubble Storm | 26 short-range bubbles in every direction | start |
+| Matcha | 🌿 Vine Beam | Green beam in the direction you face | start |
+| Storm | ⚡ Thunder | Lightning hits every nearby enemy | start |
+| Blaze | 🔥 Fire Blast | Short-range spray in the direction you face | collect 250 orbs |
+| Splash | 🌀 Whirlpool | Sucks every nearby orb into you | reach stage 3 |
 
 Unlocks are lifetime totals, so they carry across runs and he makes progress even on
 bad games. Finishing a run that crosses the line gets a "NEW LOTL!" card with a sunburst.
@@ -68,8 +68,8 @@ be punished for it.
   matter beyond the hearts.
 - **ORB RUSH.** Every ~19 seconds a big sine-wave river of 42 orbs pours across the
   screen. It's the "wheee" moment, and it's where the huge chains come from.
-- **Whirlpool + chains** is the best combo in the game: save Splash's power for an Orb
-  Rush and the entire screen flies into you as one enormous chain.
+- **Whirlpool + chains** is the best combo in the game: save Splash's power for the
+  densest part of an Orb Rush and all nearby orbs fly into you as one enormous chain.
 - **Hit-stop.** The frame freezes for a few beats when you take a hit or kill the boss,
   so impacts land instead of sliding by.
 
