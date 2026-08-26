@@ -171,6 +171,8 @@ const G = {
   tick: 0,
   shake: 0,
   coop: false,
+  training: false,     // practice run: lessons on screen, nobody can be beaten
+  coach: null,         // {step, t, base, swum, hits, powers} while training
   bgBubbles: [],
   banner: null,        // {text, sub, t}
   selIndex: 0,
@@ -182,6 +184,31 @@ const PLAYER_MAX_HEALTH = 100;
 const HIT_DAMAGE = 34;
 const HEAL_AMOUNT = 30;
 const AUTO_AIM_TIME = 60 * 7;
+const TRAINING_FLOOR = 25;    // in training you can be hurt, never beaten
+const TRAINING_REGEN = 0.10;  // HP per frame, so the bar visibly climbs back
+
+// Training lessons. Each one watches a single number and waits for it to climb
+// by `need`; `auto` moves things along for the ones you can pass by doing nothing.
+const TRAINING_STEPS = [
+  { title: 'SWIM WITH ME',
+    text: 'Put a finger anywhere and drag — your lotl follows it. Arrow keys work too.',
+    need: 1500, got: (p, c) => c.swum },
+  { title: 'GRAB THE PURPLE ORBS',
+    text: 'Orbs are your points. Swim through them! Grab a few in a row to start a chain.',
+    need: 8, got: p => p.orbs },
+  { title: 'YOUR TRIDENT FIRES ITSELF',
+    text: 'It always shoots forward, to the right. Line the enemies up on your right side.',
+    need: 4, got: p => p.kills },
+  { title: 'WATCH YOUR HEALTH',
+    text: 'Enemies hurt, and the bar up top shows it. In training you always heal back up — try dodging!',
+    need: 1, got: (p, c) => c.hits, auto: 60 * 12 },
+  { title: 'YOUR BIG POWER',
+    text: 'The round button is full. Tap it — or press SPACE — to let your power go!',
+    need: 1, got: (p, c) => c.powers, setup: p => { p.power = p.powerMax; } },
+  { title: "YOU'RE READY!",
+    text: 'Practise as long as you like. In the real game every stage ends with the Magma Lotl boss — beat it and a new world begins.',
+    need: Infinity, got: () => 0 }
+];
 
 /* ---------- player ---------- */
 function makePlayer(lotlIndex, slot) {
@@ -201,8 +228,10 @@ function makePlayer(lotlIndex, slot) {
   };
 }
 
-function startRun(coop) {
+function startRun(coop, training) {
   G.coop = !!coop;
+  G.training = !!training;
+  G.coach = training ? { step: 0, t: 0, base: 0, swum: 0, hits: 0, powers: 0 } : null;
   G.players = [makePlayer(G.selIndex, 0)];
   if (coop) G.players.push(makePlayer(G.selP2, 1));
   G.bullets.length = 0; G.ebullets.length = 0; G.orbs.length = 0;
@@ -211,8 +240,34 @@ function startRun(coop) {
   G.score = 0; G.orbCount = 0; G.shake = 0; G.t = 0; G.tick = 0;
   G.combo = 0; G.comboTimer = 0; G.bestCombo = 0; G.freeze = 0; G.newUnlocks = [];
   G.screen = 'play';
+  if (training) {
+    banner('TRAINING', "Nothing can beat you here — take your time!");
+    return;                                  // practice runs stay out of the save file
+  }
   banner('STAGE 1: ' + stageTheme(1).name, 'Swim! Grab the purple orbs!');
   save.plays++; persist();
+}
+
+function coachStep() { return G.coach ? TRAINING_STEPS[G.coach.step] : null; }
+
+// Advance the lesson as soon as its number has moved far enough.
+function updateCoach(dt) {
+  const c = G.coach, p = G.players[0];
+  if (!c || !p) return;
+  c.t += dt;
+  c.swum += Math.hypot(p.vx, p.vy) * dt;
+  if (c.step >= TRAINING_STEPS.length - 1) return;   // the last card is the finish line
+  if (c.t < 130) return;                             // leave every card up long enough to read
+  const step = TRAINING_STEPS[c.step];
+  if (step.got(p, c) - c.base < step.need && !(step.auto && c.t > step.auto)) return;
+
+  c.step++; c.t = 0;
+  const next = TRAINING_STEPS[c.step];
+  c.base = next.got(p, c);
+  if (next.setup) for (const pl of G.players) next.setup(pl);
+  Snd.win();
+  floatText(p.x, p.y - 80, 'Nice!', '#ffd166');
+  ring(p.x, p.y, '#ffd166', 170);
 }
 
 const banner = (text, sub) => { G.banner = { text, sub: sub || '', t: 0 }; };
@@ -335,6 +390,7 @@ window.addEventListener('keydown', e => {
     }
     else if (k === '1') { G.coop = false; G.pickingP2 = false; Snd.ui(); }
     else if (enter) { G.pickingP2 = false; startRun(G.coop); e.preventDefault(); }
+    else if (k === 't') { G.pickingP2 = false; startRun(G.coop, true); }
     else if (k === 'h' || k === '?' || k === '/') { G.helpFrom = 'select'; G.screen = 'help'; }
     else if (k === 'escape') { G.coop = false; G.pickingP2 = false; G.screen = 'title'; }
   } else if (G.screen === 'play') {
@@ -422,9 +478,11 @@ function director() {
   const s = G.stage;
   const t = G.tick;
   if (G.boss) return;
+  // training introduces one thing at a time — nothing arrives before its lesson
+  const lesson = G.coach ? G.coach.step : 99;
 
   // orb ribbons — the main "yum" of the game
-  if (t % 44 === 0) {
+  if (lesson >= 1 && t % 44 === 0) {
     const y0 = rnd(120, H - 220);
     const n = 5 + ((Math.random() * 4) | 0);
     const wave = rnd(-1, 1) * 40;
@@ -434,18 +492,18 @@ function director() {
   }
   // foes
   const rate = Math.max(34, 96 - s * 7);
-  if (t > 90 && t % rate === 0) {
+  if (lesson >= 2 && t > 90 && t % rate === 0) {
     const roll = Math.random();
     if (s >= 3 && roll > 0.82) spawnFoe('puffer');
     else if (s >= 2 && roll > 0.55) spawnFoe('spiker');
     else spawnFoe('blob');
   }
   // occasional health refill and temporary auto-aim power-up
-  if (t % 900 === 400) spawnPickup(W + 30, rnd(120, H - 220), 'heart');
-  if (t > 180 && t % 1250 === 700) spawnPickup(W + 30, rnd(120, H - 220), 'target');
+  if (lesson >= 3 && t % 900 === 400) spawnPickup(W + 30, rnd(120, H - 220), 'heart');
+  if (lesson >= 3 && t > 180 && t % 1250 === 700) spawnPickup(W + 30, rnd(120, H - 220), 'target');
 
   // ORB RUSH — a big shimmering river of orbs to chain through
-  if (t > 300 && t % 1150 === 0) {
+  if (lesson >= 5 && t > 300 && t % 1150 === 0) {
     banner('ORB RUSH!', 'Chain them all!');
     Snd.win();
     const y0 = rnd(200, H - 260), amp = rnd(70, 140);
@@ -539,6 +597,7 @@ function inPowerRange(p, target, range) {
 
 function firePower(p) {
   if (!p || !p.alive || p.power < p.powerMax) return;
+  if (G.coach) G.coach.powers++;
   p.power = 0;
   Snd.power();
   G.shake = 14;
@@ -657,7 +716,8 @@ function collectOrb(p, x, y) {
 
 function hurtPlayer(p) {
   if (p.inv > 0 || !p.alive) return;
-  p.health = Math.max(0, p.health - HIT_DAMAGE);
+  if (G.coach) G.coach.hits++;
+  p.health = Math.max(G.training ? TRAINING_FLOOR : 0, p.health - HIT_DAMAGE);
   p.inv = 110;
   G.shake = 16;
   G.freeze = 7;          // hit-stop: the moment lands harder
@@ -720,7 +780,7 @@ function update(dt) {
   if (G.screen !== 'play') return;
 
   G.tick++;
-  G.stageTimer += dt;
+  if (!G.training) G.stageTimer += dt;   // no stage clock in training, so no boss
 
   // combo only survives if you keep the chain going
   if (G.combo > 0) {
@@ -742,6 +802,7 @@ function update(dt) {
       continue;
     }
     keyboardDrive(p, dt);
+    if (G.training) p.health = Math.min(p.maxHealth, p.health + TRAINING_REGEN * dt);
     p.inv = Math.max(0, p.inv - dt);
     p.bob += 0.06 * dt;
 
@@ -906,6 +967,8 @@ function update(dt) {
     if (e.kind === 'text') e.y -= 0.9 * dt;
     if (e.t >= e.life) G.fx.splice(i, 1);
   }
+
+  if (G.training) updateCoach(dt);
 }
 
 /* ============================================================
@@ -1430,8 +1493,14 @@ function drawHUD() {
   ctx.fillStyle = '#7b3fd6';
   ctx.fillText('🟣 ' + G.orbCount + '   ⭐ ' + save.best.toLocaleString(), W - 22, 66);
 
-  // stage progress
-  if (!G.boss) {
+  // stage progress — training has no clock, so it says so instead
+  if (G.training) {
+    const bw = 200, bx = W / 2 - bw / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.72)'; roundRect(bx, 20, bw, 28, 14); ctx.fill();
+    ctx.fillStyle = '#4a2d6b'; ctx.font = '800 17px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🎓 TRAINING', W / 2, 35);
+  } else if (!G.boss) {
     const bw = 260, bx = W / 2 - bw / 2;
     ctx.fillStyle = 'rgba(255,255,255,0.55)'; roundRect(bx, 20, bw, 16, 8); ctx.fill();
     ctx.fillStyle = '#7b3fd6'; roundRect(bx, 20, bw * clamp(G.stageTimer / STAGE_LEN, 0, 1), 16, 8); ctx.fill();
@@ -1489,6 +1558,8 @@ function drawHUD() {
     roundRect(bx, 132, bw * clamp(G.comboTimer / 105, 0, 1), 8, 4); ctx.fill();
   }
 
+  if (G.coach) drawCoach();
+
   // banner
   if (G.banner) {
     const k = G.banner.t;
@@ -1503,6 +1574,44 @@ function drawHUD() {
     }
     ctx.restore();
   }
+}
+
+// The training card: which lesson you are on, and the way out of training.
+function drawCoach() {
+  const c = G.coach, step = TRAINING_STEPS[c.step];
+  const last = c.step === TRAINING_STEPS.length - 1;
+  const cw = Math.min(660, W - 360), cx = W / 2, cy = H - 152, ch = 96;
+  const x = cx - cw / 2;
+
+  ctx.save();
+  ctx.globalAlpha = 0.94;
+  ctx.fillStyle = 'rgba(30,16,48,0.82)'; roundRect(x, cy, cw, ch, 22); ctx.fill();
+  ctx.strokeStyle = last ? '#ffd166' : 'rgba(255,255,255,0.4)'; ctx.lineWidth = 4;
+  roundRect(x, cy, cw, ch, 22); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#ffd166';
+  fitOne(step.title, cx, cy + 30, cw - 48, 22, '900');
+  ctx.fillStyle = '#efe6ff';
+  fitText(step.text, cx, cy + 56, cw - 44, 2, [17, 16, 15, 14], '600');
+
+  // one dot per lesson, so he can see how far along he is
+  const n = TRAINING_STEPS.length, dx = cx - (n - 1) * 9;
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = i < c.step ? '#ffd166' : i === c.step ? '#fff' : 'rgba(255,255,255,0.3)';
+    ctx.beginPath(); ctx.arc(dx + i * 18, cy - 14, i === c.step ? 6 : 5, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+
+  if (G.screen !== 'play') return;   // the pause menu owns the taps while it is up
+  btn({ id: 'trainstart',
+        x: cx - (last ? 165 : 105), y: cy - (last ? 92 : 78), w: last ? 330 : 210, h: last ? 60 : 48,
+        label: last ? '▶  START THE GAME' : '▶  SKIP TRAINING',
+        bg: last ? '#ffd166' : 'rgba(74,45,107,0.85)',
+        fg: last ? '#4a2d6b' : '#e8dcff',
+        font: last ? '800 26px system-ui,sans-serif' : '800 19px system-ui,sans-serif',
+        onTap: () => startRun(G.coop) });
 }
 
 function drawTitle() {
@@ -1618,9 +1727,15 @@ function drawSelect() {
   ctx.textAlign = 'center'; ctx.font = '700 20px system-ui,sans-serif'; ctx.fillStyle = '#6b4a8f';
   ctx.fillText(sel.powerIcon + ' ' + sel.tip, W / 2, y0 + chh + 34);
 
-  btn({ x: W / 2 - 260, y: H - 108, w: 250, h: 76, label: '▶  1 PLAYER', bg: '#8e44e8',
+  // three ways in: practice, solo, together
+  const bw = 228, bgap = 12, bx0 = W / 2 - (bw * 3 + bgap * 2) / 2, bfont = '800 27px system-ui,sans-serif';
+  const firstTime = !save.plays;
+  btn({ id: 'training', x: bx0, y: H - 108, w: bw, h: 76, label: '🎓 TRAINING',
+        bg: firstTime ? '#ffd166' : '#6b5b8f', fg: firstTime ? '#4a2d6b' : '#fff', font: bfont,
+        onTap: () => { G.pickingP2 = false; startRun(G.coop, true); } });
+  btn({ x: bx0 + bw + bgap, y: H - 108, w: bw, h: 76, label: '▶  1 PLAYER', bg: '#8e44e8', font: bfont,
         onTap: () => { G.pickingP2 = false; startRun(false); } });
-  btn({ x: W / 2 + 10, y: H - 108, w: 250, h: 76, label: '👥 2 PLAYERS', bg: '#3aa0ff',
+  btn({ x: bx0 + (bw + bgap) * 2, y: H - 108, w: bw, h: 76, label: '👥 2 PLAYERS', bg: '#3aa0ff', font: bfont,
         onTap: () => {
           if (!G.coop) {
             G.coop = true; G.pickingP2 = true;
@@ -1634,6 +1749,9 @@ function drawSelect() {
   if (G.coop) {
     ctx.font = '700 18px system-ui,sans-serif'; ctx.fillStyle = '#3aa0ff';
     ctx.fillText('P2: tap a card to choose, then tap 2 PLAYERS again. Each player drags with one finger!', W / 2, H - 126);
+  } else if (firstTime) {
+    ctx.font = '800 19px system-ui,sans-serif'; ctx.fillStyle = '#ffd166';
+    ctx.fillText('First time? Start with 🎓 TRAINING — nothing can beat you in there.', W / 2, H - 126);
   }
 
   btn({ id: 'selback', shape: 'circle', x: 52, y: 52, r: 30, label: '↩', bg: 'rgba(255,255,255,0.85)', fg: '#4a2d6b',
@@ -1708,7 +1826,8 @@ function drawHelp() {
   // left column — the goal and the controls
   heading('WHAT TO DO', lx, y, '🎯'); y += 30;
   y = line('Swim around and grab the purple orbs. Your trident always fires forward, to the right — so line the enemies up on your right side.', lx, y); y += 12;
-  y = line('Grab a floating target for 7 seconds of auto-aim. Every stage ends with the Magma Lotl boss. Beat it, restore some health, and enter a new world.', lx, y); y += 26;
+  y = line('Grab a floating target for 7 seconds of auto-aim. Every stage ends with the Magma Lotl boss. Beat it, restore some health, and enter a new world.', lx, y); y += 12;
+  y = line('New to it? Tap 🎓 TRAINING on the lotl screen. Same game, with a hint card at the bottom, and nothing can beat you — play until you feel ready.', lx, y, '#ffd166'); y += 26;
 
   heading('CONTROLS', lx, y, '🎮'); y += 30;
   y = line('On a tablet:  put a finger anywhere and drag. Your lotl follows it.', lx, y, '#8fd4ff'); y += 8;
@@ -1716,7 +1835,7 @@ function drawHelp() {
   y = line('Big round button (or the SPACE bar) fires your special power once it glows. Powers only reach nearby enemies.', lx, y, '#8fd4ff'); y += 8;
   y = line('Two players, one keyboard:  P1 uses the ARROW KEYS + SPACE, P2 uses W A S D + Q.', lx, y, '#ffd166'); y += 8;
   y = line('Two players, one tablet:  each of you drags with one finger, and each has your own round power button.', lx, y, '#ffd166'); y += 8;
-  y = line('In menus:  ← → to pick a lotl, ENTER to start, 2 for two players, ESC to go back.', lx, y, '#8fd4ff');
+  y = line('In menus:  ← → to pick a lotl, ENTER to start, T for training, 2 for two players, ESC to go back.', lx, y, '#8fd4ff');
 
   // right column — the scoring and the collection
   let y2 = 118;
@@ -1760,7 +1879,7 @@ function drawPaused() {
         onTap: () => { G.helpFrom = 'paused'; G.screen = 'help'; } });
   btn({ id: 'pausemenu', x: W / 2 - 150, y: H * 0.48 + 168, w: 300, h: 60, label: '🏠 MENU', bg: '#6b5b8f',
         font: '800 26px system-ui,sans-serif',
-        onTap: () => { G.screen = 'title'; G.coop = false; } });
+        onTap: () => { G.screen = 'title'; G.coop = false; G.training = false; G.coach = null; } });
   btn({ id: 'mute2', shape: 'circle', x: W / 2, y: H * 0.48 + 200, r: 34, label: save.mute ? '🔇' : '🔊',
         bg: 'rgba(255,255,255,0.85)', fg: '#4a2d6b', font: '28px system-ui,sans-serif',
         onTap: () => { save.mute = !save.mute; persist(); } });
@@ -1821,7 +1940,7 @@ function drawOver() {
   btn({ x: W / 2 - 160, y: H * 0.755, w: 320, h: 78, label: '🔁 PLAY AGAIN', bg: '#8e44e8',
         onTap: () => startRun(G.coop) });
   btn({ x: W / 2 - 100, y: H * 0.755 + 92, w: 200, h: 52, label: '🏠 MENU', bg: '#6b5b8f', font: '700 26px system-ui,sans-serif',
-        onTap: () => { G.screen = 'title'; G.coop = false; } });
+        onTap: () => { G.screen = 'title'; G.coop = false; G.training = false; G.coach = null; } });
 }
 
 /* ============================================================

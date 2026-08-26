@@ -27,6 +27,19 @@ Menus work by mouse/touch **and** keyboard: `← →` pick a lotl, `ENTER` start
 `2` toggles two players, `ESC` goes back, `?` or `H` opens How To Play.
 There's a **?** button on the title, roster, and pause screens.
 
+## Training mode
+
+`🎓 TRAINING` on the lotl screen is the way in for a first-timer. It is the real game with
+three differences: a hint card at the bottom walks through one lesson at a time (swim,
+orbs, the trident, taking a hit, the big power), **nothing can beat you** — damage floors
+at 25 HP and the bar heals itself back up — and there is no stage clock, so the boss never
+arrives. The director holds each thing back until its lesson comes up, so lesson one is an
+empty ocean and nothing else.
+
+Nothing in a training run touches the save file: no score, no orbs, no unlocks. When the
+last card says `YOU'RE READY!` a big gold button starts the real game, and `▶ SKIP TRAINING`
+is there the whole time for the second child who already knows all this.
+
 ## How it plays
 
 - **Drag anywhere** to swim. The lotl follows your finger — that's the whole control scheme.
