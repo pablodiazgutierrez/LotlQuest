@@ -1183,16 +1183,22 @@ function drawBoss(b) {
   ctx.restore();
   ctx.globalAlpha = 1;
 
-  // hp bar
-  const bw = Math.min(W * 0.6, 620), bx = (W - bw) / 2, by = 22;
+  // hp bar — the label sits centred inside the bar, whatever baseline we inherited
+  const bw = Math.min(W * 0.6, 620), bx = (W - bw) / 2, by = 22, bh = 26;
   ctx.fillStyle = 'rgba(30,16,40,0.35)';
-  roundRect(bx - 5, by - 5, bw + 10, 30, 14); ctx.fill();
+  roundRect(bx - 5, by - 5, bw + 10, bh + 10, 16); ctx.fill();
   ctx.fillStyle = '#3b1f2e';
-  roundRect(bx, by, bw, 20, 10); ctx.fill();
+  roundRect(bx, by, bw, bh, 13); ctx.fill();
   ctx.fillStyle = '#ff5a36';
-  roundRect(bx, by, bw * clamp(b.hp / b.maxHp, 0, 1), 20, 10); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = '700 18px system-ui,sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('MAGMA LOTL', W / 2, by + 16);
+  roundRect(bx, by, bw * clamp(b.hp / b.maxHp, 0, 1), bh, 13); ctx.fill();
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '800 17px system-ui,sans-serif';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,16,40,0.55)';
+  ctx.strokeText('MAGMA LOTL', W / 2, by + bh / 2 + 1);
+  ctx.fillStyle = '#fff';
+  ctx.fillText('MAGMA LOTL', W / 2, by + bh / 2 + 1);
+  ctx.restore();
 }
 
 function roundRect(x, y, w, h, r) {
@@ -1394,7 +1400,8 @@ function drawHUD() {
   // health bars
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   for (const pl of G.players) {
-    const yy = 28 + pl.slot * 42;
+    // below the top strip, so a health bar never runs into the boss bar
+    const yy = 62 + pl.slot * 42;
     const bx = G.players.length > 1 ? 58 : 20, bw = 210, bh = 22;
     if (G.players.length > 1) {
       ctx.fillStyle = pl.slot === 0 ? '#3aa0ff' : '#ffb020';
