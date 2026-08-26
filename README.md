@@ -30,11 +30,11 @@ There's a **?** button on the title, roster, and pause screens.
 ## How it plays
 
 - **Drag anywhere** to swim. The lotl follows your finger — that's the whole control scheme.
-- **The trident fires by itself.** It targets the nearest enemy, including enemies behind you, so little hands stay free to dodge.
+- **The trident fires by itself in the direction you swim.** Line up each shot or grab a temporary auto-aim target power-up.
 - **Purple orbs** are the points, and they charge the power meter. Orbs magnet toward you when close, so near-misses still feel good.
 - **Big round button, bottom-left** = the special power, once it hits 100%.
-- 3 hearts, long invincibility flash after a hit, and hitting an enemy also hurts it — mistakes cost something but never feel unfair.
-- Each stage runs ~42 seconds, then the **Magma Lotl** boss shows up. Beat it and you get a heart back, stage goes up, everything gets a bit faster. Endless.
+- A 100 HP health bar, long invincibility flash after a hit, and floating health refills keep damage easy to understand.
+- Each stage runs ~42 seconds, then the **Magma Lotl** boss shows up. Beat it, restore 30 HP, and enter a new background: Volcano, Jungle, Desert, Ice Cave, then around again. Endless.
 
 ## The collection
 
@@ -45,7 +45,7 @@ Locked cards show as a `?` silhouette with a progress bar, which is the whole ho
 
 | Lotl | Power | What it does | How you get it |
 |---|---|---|---|
-| Mochi | 💗 Mochi Bounce | Refills a heart for every teammate, clears nearby enemy shots, shockwave | start |
+| Mochi | 💗 Mochi Bounce | Restores 30 HP for every teammate, clears nearby enemy shots, shockwave | start |
 | Coal | 🫧 Bubble Storm | 26 short-range bubbles in every direction | start |
 | Matcha | 🌿 Vine Beam | Green beam in the direction you face | start |
 | Storm | ⚡ Thunder | Lightning hits every nearby enemy | start |
@@ -64,14 +64,16 @@ be punished for it.
 
 - **Chains.** Grab orbs without a gap and the counter climbs — and so does the *pitch of
   the collect sound*, note by note. Every 8 orbs the multiplier steps up (x2, x3, x4…)
-  with a flash and a ring. Taking a hit breaks the chain, which is what makes dodging
-  matter beyond the hearts.
+  with a flash and a ring. Taking a hit breaks the chain, which makes dodging matter
+  beyond protecting the health bar.
 - **ORB RUSH.** Every ~19 seconds a big sine-wave river of 42 orbs pours across the
   screen. It's the "wheee" moment, and it's where the huge chains come from.
 - **Whirlpool + chains** is the best combo in the game: save Splash's power for the
   densest part of an Orb Rush and all nearby orbs fly into you as one enormous chain.
 - **Hit-stop.** The frame freezes for a few beats when you take a hit or kill the boss,
   so impacts land instead of sliding by.
+- **Target power-ups.** Grab the floating target for 7 seconds of auto-aim. Normal
+  trident shots follow the direction you swim, so the power-up feels special.
 
 ## Two players (already works)
 
@@ -147,7 +149,7 @@ console while he watches — great for "what if the boss came right now?":
 ```js
 LotlGame.stageTimer = 99999    // summon the boss
 LotlGame.players[0].power = 100 // fill the power meter
-LotlGame.players[0].hearts = 9  // invincible-ish
+LotlGame.players[0].health = 100 // refill the health bar
 LotlGame.stage = 5              // jump the difficulty
 LotlGame.combo = 40             // fake a huge chain
 ```
