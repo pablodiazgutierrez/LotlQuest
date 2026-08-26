@@ -30,7 +30,7 @@ There's a **?** button on the title, roster, and pause screens.
 ## How it plays
 
 - **Drag anywhere** to swim. The lotl follows your finger — that's the whole control scheme.
-- **The trident fires by itself in the direction you swim.** Line up each shot or grab a temporary auto-aim target power-up.
+- **The trident fires by itself, always forward (to the right).** Line enemies up on your right, or grab a temporary auto-aim target power-up.
 - **Purple orbs** are the points, and they charge the power meter. Orbs magnet toward you when close, so near-misses still feel good.
 - **Big round button, bottom-left** = the special power, once it hits 100%.
 - A 100 HP health bar, long invincibility flash after a hit, and floating health refills keep damage easy to understand.
@@ -73,7 +73,7 @@ be punished for it.
 - **Hit-stop.** The frame freezes for a few beats when you take a hit or kill the boss,
   so impacts land instead of sliding by.
 - **Target power-ups.** Grab the floating target for 7 seconds of auto-aim. Normal
-  trident shots follow the direction you swim, so the power-up feels special.
+  trident shots only ever go forward, so the power-up feels special.
 
 ## Two players (already works)
 

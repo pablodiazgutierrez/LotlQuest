@@ -193,7 +193,8 @@ function makePlayer(lotlIndex, slot) {
     inv: 90, cool: 0, power: 0, powerMax: 100,
     alive: true, downTimer: 0,
     pointerId: null, tail: 0, bob: rnd(0, TAU),
-    facing: 1, shootAngle: 0, aimTimer: 0, aimTarget: null,
+    facing: 1,           // lotls always face — and fire — right
+    aimTimer: 0, aimTarget: null,
     kills: 0, orbs: 0
   };
 }
@@ -751,19 +752,16 @@ function update(dt) {
     p.x = clamp(p.x + p.vx * dt, 40, W - 40);
     p.y = clamp(p.y + p.vy * dt, 46, H - 120);
     p.tail = sp;
-    if (sp > 0.35) {
-      p.shootAngle = Math.atan2(p.vy, p.vx);
-      if (Math.abs(p.vx) > 0.35) p.facing = p.vx < 0 ? -1 : 1;
-    }
     p.aimTimer = Math.max(0, p.aimTimer - dt);
     p.aimTarget = p.aimTimer > 0 ? findAutoTarget(p) : null;
 
-    // Normal fire follows your swim direction. The target pickup temporarily auto-aims.
+    // Shots always go forward — one rule small hands can hold on to.
+    // The target pickup is the only thing that ever aims for you.
     p.cool -= dt;
     if (p.cool <= 0) {
       p.cool = 15;
       const c = p.lotl;
-      let dx = Math.cos(p.shootAngle), dy = Math.sin(p.shootAngle);
+      let dx = 1, dy = 0;
       if (p.aimTarget) {
         dx = p.aimTarget.x - p.x;
         dy = p.aimTarget.y - p.y;
@@ -1707,7 +1705,7 @@ function drawHelp() {
 
   // left column — the goal and the controls
   heading('WHAT TO DO', lx, y, '🎯'); y += 30;
-  y = line('Swim around and grab the purple orbs. Your trident fires where your lotl is swimming, so line up your shots!', lx, y); y += 12;
+  y = line('Swim around and grab the purple orbs. Your trident always fires forward, to the right — so line the enemies up on your right side.', lx, y); y += 12;
   y = line('Grab a floating target for 7 seconds of auto-aim. Every stage ends with the Magma Lotl boss. Beat it, restore some health, and enter a new world.', lx, y); y += 26;
 
   heading('CONTROLS', lx, y, '🎮'); y += 30;
