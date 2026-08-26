@@ -39,18 +39,19 @@ There's a **?** button on the title, roster, and pause screens.
 ## The collection
 
 The card drawings were a roster screen, so that's what the character select is: **6 lotls,
-4 of them his named ones (always unlocked), 2 earned by playing.** The two extras come
-straight out of the battle drawing — the yellow/orange fire one and the blue one.
+2 unlocked at the start and 4 earned by playing.** Starting with almost the whole roster
+left nothing to chase, so only Mochi and Coal are free. The last two come straight out of
+the battle drawing — the yellow/orange fire one and the blue one.
 Locked cards show as a `?` silhouette with a progress bar, which is the whole hook.
 
 | Lotl | Power | What it does | How you get it |
 |---|---|---|---|
 | Mochi | 💗 Mochi Bounce | Restores 30 HP for every teammate, clears nearby enemy shots, shockwave | start |
 | Coal | 🫧 Bubble Storm | 26 short-range bubbles in every direction | start |
-| Matcha | 🌿 Vine Beam | Green beam in the direction you face | start |
-| Storm | ⚡ Thunder | Lightning hits every nearby enemy | start |
-| Blaze | 🔥 Fire Blast | Short-range spray in the direction you face | collect 250 orbs |
-| Splash | 🌀 Whirlpool | Sucks every nearby orb into you | reach stage 3 |
+| Matcha | 🌿 Vine Beam | Green beam in the direction you face | collect 75 orbs |
+| Storm | ⚡ Thunder | Lightning hits every nearby enemy | reach stage 2 |
+| Blaze | 🔥 Fire Blast | Short-range spray in the direction you face | collect 300 orbs |
+| Splash | 🌀 Whirlpool | Sucks every nearby orb into you | reach stage 4 |
 
 Unlocks are lifetime totals, so they carry across runs and he makes progress even on
 bad games. Finishing a run that crosses the line gets a "NEW LOTL!" card with a sunburst.

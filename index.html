@@ -124,22 +124,24 @@ const LOTLS = [
   { id: 'matcha', name: 'Matcha', body: '#c8f08a', fin: '#3faa3f', gill: '#1f7a1f', trail: '#9be36b',
     blurb: 'Fast and brave. Vine puncher.',
     powerName: 'VINE BEAM', powerIcon: '🌿',
-    tip: 'A giant green beam in the direction you face.' },
+    tip: 'A giant green beam in the direction you face.',
+    unlock: { kind: 'orbs', n: 75, label: 'Collect 75 orbs' } },
   { id: 'storm', name: 'Storm', body: '#2a2a3a', fin: '#5b5bff', gill: '#9b7bff', trail: '#8f8fff',
     blurb: 'Mysterious. Made of thunder.',
     powerName: 'THUNDER', powerIcon: '⚡',
-    tip: 'Lightning zaps every nearby enemy.' },
-  // the two extra lotls from the big battle drawing — earned by playing
+    tip: 'Lightning zaps every nearby enemy.',
+    unlock: { kind: 'stage', n: 2, label: 'Reach stage 2' } },
+  // the last four are earned by playing — a ladder that alternates orbs and stages
   { id: 'blaze', name: 'Blaze', body: '#ffe14d', fin: '#ff8a1f', gill: '#ff5e00', trail: '#ffc46b',
     blurb: 'Loud, hot, always first into the fight.',
     powerName: 'FIRE BLAST', powerIcon: '🔥',
     tip: 'A huge spray of fireballs in the direction you face.',
-    unlock: { kind: 'orbs', n: 250, label: 'Collect 250 orbs' } },
+    unlock: { kind: 'orbs', n: 300, label: 'Collect 300 orbs' } },
   { id: 'splash', name: 'Splash', body: '#8fd4ff', fin: '#ffe14d', gill: '#2f8fd6', trail: '#bfe9ff',
     blurb: 'Makes the whole sea come to you.',
     powerName: 'WHIRLPOOL', powerIcon: '🌀',
     tip: 'Sucks every nearby orb right into you.',
-    unlock: { kind: 'stage', n: 3, label: 'Reach stage 3' } }
+    unlock: { kind: 'stage', n: 4, label: 'Reach stage 4' } }
 ];
 
 // bullets and bursts use `shot` when the fin is too dark to see in the water
@@ -1724,7 +1726,7 @@ function drawHelp() {
   y2 = line('Watch for ORB RUSH — a huge river of orbs. That is your chance at a giant chain.', rx, y2, '#ffd166'); y2 += 26;
 
   heading('COLLECT THE LOTLS', rx, y2, '🃏'); y2 += 30;
-  y2 = line('There are 6 lotls. Four are yours from the start; two are locked.', rx, y2); y2 += 8;
+  y2 = line('There are 6 lotls. Mochi and Coal are yours from the start; the other four are locked.', rx, y2); y2 += 8;
   y2 = line('Collect orbs and reach new stages to unlock them — your progress is saved between games.', rx, y2); y2 += 26;
 
   heading('HEALTH', rx, y2, '❤️'); y2 += 30;
