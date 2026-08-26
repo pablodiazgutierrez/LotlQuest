@@ -1528,6 +1528,7 @@ function drawTitle() {
 
 function drawSelect() {
   const owned = LOTLS.filter(isUnlocked).length;
+  ctx.textBaseline = 'alphabetic';
   bigTitle('YOUR LOTLS', 66, 46, '#ffd166');
   ctx.textAlign = 'center'; ctx.font = '800 20px system-ui,sans-serif'; ctx.fillStyle = '#6b4a8f';
   ctx.fillText(owned + ' of ' + LOTLS.length + ' collected', W / 2, 102);
@@ -1535,7 +1536,7 @@ function drawSelect() {
   const n = LOTLS.length;
   const cw = Math.min(200, (W - 90) / n - 16), gap = 16;
   const total = n * cw + (n - 1) * gap;
-  const x0 = (W - total) / 2, y0 = 138, chh = 296;
+  const x0 = (W - total) / 2, y0 = 138, chh = 320;
 
   for (let i = 0; i < n; i++) {
     const l = LOTLS[i];
@@ -1555,13 +1556,13 @@ function drawSelect() {
       drawLotl(x + cw / 2 + 6, y0 + 112, Math.min(54, cw * 0.28), l,
         { t: G.t + i * 40, seed: i + 1, trident: true, tilt: Math.sin((G.t + i * 30) * 0.03) * 0.12 });
       ctx.textAlign = 'center';
-      ctx.font = '900 28px system-ui,sans-serif'; ctx.fillStyle = '#4a2d6b';
-      ctx.fillText(l.name.toUpperCase(), x + cw / 2, y0 + 196);
-      ctx.font = '600 14px system-ui,sans-serif'; ctx.fillStyle = '#7b6a92';
-      wrapText(l.blurb, x + cw / 2, y0 + 222, cw - 24, 18);
+      ctx.fillStyle = '#4a2d6b';
+      fitOne(l.name.toUpperCase(), x + cw / 2, y0 + 196, cw - 24, 28, '900');
+      ctx.fillStyle = '#7b6a92';
+      fitText(l.blurb, x + cw / 2, y0 + 218, cw - 24, 3, [14, 13, 12, 11], '600');
       ctx.fillStyle = '#f0e6ff'; roundRect(x + 12, y0 + chh - 50, cw - 24, 38, 14); ctx.fill();
-      ctx.fillStyle = '#6a35c9'; ctx.font = '700 14px system-ui,sans-serif';
-      ctx.fillText(l.powerIcon + ' ' + l.powerName, x + cw / 2, y0 + chh - 26);
+      ctx.fillStyle = '#6a35c9';
+      fitOne(l.powerIcon + ' ' + l.powerName, x + cw / 2, y0 + chh - 26, cw - 34, 14, '700');
     } else {
       // mystery lotl: a silhouette and how close he is to it
       ctx.save();
@@ -1573,10 +1574,10 @@ function drawSelect() {
       ctx.textAlign = 'center';
       ctx.font = '900 44px system-ui,sans-serif'; ctx.fillStyle = '#6d5f86';
       ctx.fillText('?', x + cw / 2, y0 + 112);
-      ctx.font = '900 24px system-ui,sans-serif'; ctx.fillStyle = '#6d5f86';
-      ctx.fillText('🔒 LOCKED', x + cw / 2, y0 + 196);
-      ctx.font = '700 14px system-ui,sans-serif'; ctx.fillStyle = '#5f5279';
-      wrapText(l.unlock.label, x + cw / 2, y0 + 222, cw - 24, 18);
+      ctx.fillStyle = '#6d5f86';
+      fitOne('🔒 LOCKED', x + cw / 2, y0 + 196, cw - 24, 24, '900');
+      ctx.fillStyle = '#5f5279';
+      fitText(l.unlock.label, x + cw / 2, y0 + 218, cw - 24, 3, [14, 13, 12, 11], '700');
       // progress bar
       const pw = cw - 30, px = x + 15, py = y0 + chh - 44;
       ctx.fillStyle = '#c3b8d6'; roundRect(px, py, pw, 14, 7); ctx.fill();
@@ -1596,11 +1597,13 @@ function drawSelect() {
     });
     // tag
     if (isP1 || isP2) {
+      ctx.save();
       ctx.fillStyle = isP1 ? '#3aa0ff' : '#ffb020';
       roundRect(x + cw / 2 - 30, y0 - 18, 60, 34, 12); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.font = '800 18px system-ui,sans-serif'; ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(isP1 ? 'P1' : 'P2', x + cw / 2, y0);
+      ctx.restore();
     }
   }
 
@@ -1632,15 +1635,49 @@ function drawSelect() {
         font: '900 32px system-ui,sans-serif', onTap: () => { G.helpFrom = 'select'; G.screen = 'help'; } });
 }
 
-function wrapText(text, cx, y, maxW, lh) {
-  const words = text.split(' ');
-  let line = '', yy = y;
-  for (const w of words) {
+function splitLines(text, maxW) {
+  const lines = [];
+  let line = '';
+  for (const w of text.split(' ')) {
     const test = line ? line + ' ' + w : w;
-    if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, cx, yy); line = w; yy += lh; }
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
     else line = test;
   }
-  if (line) ctx.fillText(line, cx, yy);
+  if (line) lines.push(line);
+  return lines;
+}
+
+function wrapText(text, cx, y, maxW, lh) {
+  splitLines(text, maxW).forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
+}
+
+// One line that must not clip: shrink until it fits the box it was given.
+function fitOne(text, cx, y, maxW, size, weight) {
+  let s = size;
+  do {
+    ctx.font = weight + ' ' + s + 'px system-ui,sans-serif';
+    s -= 1;
+  } while (ctx.measureText(text).width > maxW && s > 8);
+  ctx.fillText(text, cx, y);
+}
+
+// Card blurbs vary in length, so pick the biggest size that still fits the
+// space we have. Anything that refuses to fit gets clipped with an ellipsis
+// rather than sliding under whatever is drawn below it.
+function fitText(text, cx, y, maxW, maxLines, sizes, weight) {
+  let lines = [], size = sizes[0];
+  for (size of sizes) {
+    ctx.font = weight + ' ' + size + 'px system-ui,sans-serif';
+    lines = splitLines(text, maxW);
+    if (lines.length <= maxLines) break;
+  }
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    lines[maxLines - 1] += '…';
+  }
+  const lh = size + 4;
+  lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
+  return y + lines.length * lh;
 }
 
 function drawHelp() {
