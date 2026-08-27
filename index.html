@@ -1880,7 +1880,8 @@ function drawPaused() {
   btn({ id: 'pausemenu', x: W / 2 - 150, y: H * 0.48 + 168, w: 300, h: 60, label: '🏠 MENU', bg: '#6b5b8f',
         font: '800 26px system-ui,sans-serif',
         onTap: () => { G.screen = 'title'; G.coop = false; G.training = false; G.coach = null; } });
-  btn({ id: 'mute2', shape: 'circle', x: W / 2, y: H * 0.48 + 200, r: 34, label: save.mute ? '🔇' : '🔊',
+  // sound sits beside the column, not on top of it — MENU owns that row
+  btn({ id: 'mute2', shape: 'circle', x: W / 2 + 194, y: H * 0.48 + 198, r: 34, label: save.mute ? '🔇' : '🔊',
         bg: 'rgba(255,255,255,0.85)', fg: '#4a2d6b', font: '28px system-ui,sans-serif',
         onTap: () => { save.mute = !save.mute; persist(); } });
 }
