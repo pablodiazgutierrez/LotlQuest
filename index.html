@@ -545,10 +545,14 @@ function updateBoss(dt) {
     if (b.atk >= every) {
       b.atk = 0;
       const target = livingPlayers()[0];
+      // How far to lean off straight-left (PI) to point at the player. atan2 returns
+      // near -PI above the boss and near +PI below it, so the raw difference is a
+      // whole turn out on one side — wrap it, or half the volleys fly backwards.
+      let lead = target ? Math.atan2(target.y - b.y, target.x - b.x) - Math.PI : 0;
+      lead = Math.atan2(Math.sin(lead), Math.cos(lead));
       const spread = fast ? 5 : 3;
       for (let i = 0; i < spread; i++) {
-        const ang = Math.PI + (i - (spread - 1) / 2) * 0.22 +
-          (target ? Math.atan2(target.y - b.y, target.x - b.x) - Math.PI : 0) * 0.55;
+        const ang = Math.PI + lead * 0.55 + (i - (spread - 1) / 2) * 0.22;
         G.ebullets.push({ x: b.x - 60, y: b.y + 10, vx: Math.cos(ang) * 5.2, vy: Math.sin(ang) * 5.2, r: 14, kind: 'fire' });
       }
       Snd.blip(160, 0.12, 'sawtooth', 0.08);
