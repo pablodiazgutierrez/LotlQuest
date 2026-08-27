@@ -541,7 +541,7 @@ function updateBoss(dt) {
     b.atk += dt;
     const fast = b.hp < b.maxHp * 0.4;
     if (fast && !b.angry) { b.angry = true; banner('IT IS ANGRY!', 'Keep swimming!'); }
-    const every = fast ? 34 : 56;
+    const every = fast ? 52 : 78;
     if (b.atk >= every) {
       b.atk = 0;
       const target = livingPlayers()[0];
@@ -550,7 +550,7 @@ function updateBoss(dt) {
       // whole turn out on one side — wrap it, or half the volleys fly backwards.
       let lead = target ? Math.atan2(target.y - b.y, target.x - b.x) - Math.PI : 0;
       lead = Math.atan2(Math.sin(lead), Math.cos(lead));
-      const spread = fast ? 5 : 3;
+      const spread = 3;
       for (let i = 0; i < spread; i++) {
         const ang = Math.PI + lead * 0.55 + (i - (spread - 1) / 2) * 0.22;
         G.ebullets.push({ x: b.x - 60, y: b.y + 10, vx: Math.cos(ang) * 5.2, vy: Math.sin(ang) * 5.2, r: 14, kind: 'fire' });
