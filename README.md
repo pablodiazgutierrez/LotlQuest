@@ -47,7 +47,44 @@ is there the whole time for the second child who already knows all this.
 - **Purple orbs** are the points, and they charge the power meter. Orbs magnet toward you when close, so near-misses still feel good.
 - **Big round button, bottom-left** = the special power, once it hits 100%.
 - A 100 HP health bar, long invincibility flash after a hit, and floating health refills keep damage easy to understand.
-- Each stage runs ~42 seconds, then the **Magma Lotl** boss shows up. Beat it, restore 30 HP, and enter a new background: Volcano, Jungle, Desert, Ice Cave, then around again. Endless.
+- Each level runs ~42 seconds, then that world's **boss** shows up. Beat it, restore 30 HP, and enter the next world. 8 worlds, 8 different bosses, then round 2 (same bosses, more HP). Endless.
+
+## Levels and bosses
+
+Every world has its own boss with its own trick. Big attacks always flash a **red
+warning stripe with a yellow `!`** first, then hit — the lesson is "get out of the stripe."
+
+| Level | World | Boss | What it does |
+|---|---|---|---|
+| 1 | Volcano | 🔥 Magma Lotl | Fans of 3 fireballs, sends blobs (the original) |
+| 2 | Jungle | 🐸 Big Croak | Hops around spitting seeds; every 3rd hop lands on your row and the tongue lashes out |
+| 3 | Desert | 🦀 King Pinch | Throws its claws like boomerangs (they come back!); sand walls with one gap |
+| 4 | Ice Cave | 🐡 Frosty Puff | Puffs up then pops a ring of ice shards; icicles drop from the roof |
+| 5 | Deep Sea | 🦑 Kraken | Tentacles slam up from the floor / down from the roof; ink shots |
+| 6 | Candy Reef | 👑 Jelly Queen | Wobbly shots, baby jellies, and she vanishes and reappears (sparkles show where) |
+| 7 | Shipwreck | 🦈 Ghost Shark | A pirate ghost shark: throws bones, then dashes across your whole row |
+| 8 | Storm Sea | ⚡ Shadow Lotl | The final boss: fireball fans, lightning columns, and gap walls |
+
+Beating the Shadow Lotl gives a `YOU BEAT ALL 8!` banner, a 👑 CHAMPION line on the
+title screen, and round 2. Every boss turns "angry" (faster) below 40% HP, like before.
+
+Tuning: bullets stay near the old Magma Lotl pace (~2/sec calm, ~3.4 angry). A bot that
+swims in circles without dodging gets hit about as often by every boss as by the Magma
+Lotl (10–15 hits/min); the Shadow Lotl is a little higher, the Ghost Shark lower. Boss HP
+is now `60 + 13 per level` (it was `+28`), since the later bosses hit in more ways. Hearts
+also float by during boss fights now. Each boss is one object in the `BOSSES` array.
+
+## Continue and the level picker
+
+- **Game over** on level 2+ offers `⏩ TRY LEVEL N AGAIN` as the big button (ENTER),
+  with `🔁 LEVEL 1` (R) and `🏠 MENU` under it.
+- **`🗺 LEVELS`** on the lotl screen (or `L`) opens a picker with every level you've
+  reached, showing its boss. Locked ones are a `?`. A gold `⏩ CONTINUE` marks the level
+  you last lost on, and the big button at the bottom continues from there — including
+  round-2 levels past 8.
+- The continue point is the last level you lost on (or quit from via the menu). Losing
+  on level 1 doesn't overwrite it. A continued run starts at the beginning of that level,
+  so there's time to charge the power before the boss.
 
 ## The collection
 
@@ -62,9 +99,9 @@ Locked cards show as a `?` silhouette with a progress bar, which is the whole ho
 | Mochi | 💗 Mochi Bounce | Restores 30 HP for every teammate, clears nearby enemy shots, shockwave | start |
 | Coal | 🫧 Bubble Storm | 26 short-range bubbles in every direction | start |
 | Matcha | 🌿 Vine Beam | Green beam in the direction you face | collect 75 orbs |
-| Storm | ⚡ Thunder | Lightning hits every nearby enemy | reach stage 2 |
+| Storm | ⚡ Thunder | Lightning hits every nearby enemy | reach level 2 |
 | Blaze | 🔥 Fire Blast | Short-range spray in the direction you face | collect 300 orbs |
-| Splash | 🌀 Whirlpool | Sucks every nearby orb into you | reach stage 4 |
+| Splash | 🌀 Whirlpool | Sucks every nearby orb into you | reach level 4 |
 
 Unlocks are lifetime totals, so they carry across runs and he makes progress even on
 bad games. Finishing a run that crosses the line gets a "NEW LOTL!" card with a sunburst.
@@ -140,8 +177,10 @@ or an S3 bucket. Drop the folder in and point the domain at it. No backend until
   second is still unlocked and waiting on the collection screen).
 - Unlock thresholds (250 orbs / stage 3) are a guess at his pace — first session will
   tell you whether that's too grindy. They're in the `LOTLS` array.
-- One enemy type per behavior (blob / spiker / puffer) and one boss. This is where his
-  next drawings should go — new foes are a few lines in `FOE_KINDS`.
+- One enemy type per behavior (blob / spiker / puffer / jelly). Bosses are where his
+  next drawings should go — a new boss is one entry in `BOSSES` (an `update` and a `draw`).
+- Boss tuning past level 5 is measured with a bot, not with him; watch which boss he
+  gets stuck on and adjust its timers (each boss's numbers are at the top of its `update`).
 - Art is drawn in code to match the crayon style. The best next step is scanning his real
   drawings for the *collection cards* while leaving gameplay art code-drawn (it has to
   rotate, flash, and animate) — his actual art where you can linger on it, smooth
@@ -164,7 +203,7 @@ console while he watches — great for "what if the boss came right now?":
 LotlGame.stageTimer = 99999    // summon the boss
 LotlGame.players[0].power = 100 // fill the power meter
 LotlGame.players[0].health = 100 // refill the health bar
-LotlGame.stage = 5              // jump the difficulty
+LotlGame.stage = 5              // jump to level 5 (set it before summoning the boss)
 LotlGame.combo = 40             // fake a huge chain
 ```
 
@@ -175,7 +214,7 @@ To unlock everything instantly (or reset it all):
 ```js
 // unlock all
 JSON.parse(localStorage['lotlquest.save.v1'])            // peek
-localStorage['lotlquest.save.v1'] = JSON.stringify({...JSON.parse(localStorage['lotlquest.save.v1']), orbsAll: 9999, bestStage: 9})
+localStorage['lotlquest.save.v1'] = JSON.stringify({...JSON.parse(localStorage['lotlquest.save.v1']), orbsAll: 9999, bestStage: 8})
 // wipe and start over
 localStorage.removeItem('lotlquest.save.v1')
 ```
