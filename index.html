@@ -547,7 +547,7 @@ function director() {
    how it looks (draw). They all share the enter / hurt / die
    plumbing in updateBoss(). Kid rules for every attack:
    - anything big gets a flashing warning stripe first (HAZARDS)
-   - bullets stay near the Magma Lotl's pace: ~2/sec calm, ~3.4 angry
+   - bullets stay near the first boss's pace: ~2/sec calm, ~3.4 angry
    - there is always somewhere safe to swim
    ============================================================ */
 
@@ -627,10 +627,10 @@ function updateHazards(dt) {
 }
 
 const BOSSES = [
-  /* 1 — VOLCANO: the original. Fireball fans from the red sea. */
+  /* 1 — VOLCANO: a golem of lava rock. Fireball fans from the red sea. */
   {
-    id: 'magma', name: 'MAGMA LOTL', icon: '🔥', bar: '#ff5a36', r: 92,
-    intro: 'The Magma Lotl!',
+    id: 'magma', name: 'MAGMA GOLEM', icon: '🌋', bar: '#ff5a36', r: 92,
+    intro: 'The Magma Golem wakes up!',
     minion: { kind: 'blob', every: 150 },
     update(b, dt) {
       b.y = H / 2 - 40 + Math.sin(b.t * 0.017) * (H * 0.26);
@@ -646,7 +646,7 @@ const BOSSES = [
     draw: drawMagma
   },
 
-  /* 2 — JUNGLE: a giant frog. Hops around spitting seeds; every third hop
+  /* 2 — JUNGLE: a giant swamp toad. Hops around spitting seeds; every third hop
      it lands on your row and its tongue lashes out along the red stripe. */
   {
     id: 'croak', name: 'BIG CROAK', icon: '🐸', bar: '#4caf50', r: 88,
@@ -726,10 +726,10 @@ const BOSSES = [
     draw: drawPinch
   },
 
-  /* 4 — ICE CAVE: a pufferfish. Puffs up, then pops a ring of ice shards
+  /* 4 — ICE CAVE: a spiny ice pufferfish. Puffs up, then pops a ring of ice shards
      (swim into a gap); icicles drop from the roof where a stripe warns. */
   {
-    id: 'puff', name: 'FROSTY PUFF', icon: '🐡', bar: '#5ec8ff', r: 70,
+    id: 'puff', name: 'FROSTBITE', icon: '🐡', bar: '#5ec8ff', r: 70,
     intro: 'It puffs up... then POP!',
     minion: null,
     init(b) { b.s = { phase: 'drift', t: 0, shot: 0, ice: 40 }; b.baseR = 70; },
@@ -802,10 +802,10 @@ const BOSSES = [
     draw: drawKraken
   },
 
-  /* 6 — CANDY REEF: the jelly queen. Wobbly bullets, little jellies, and she
+  /* 6 — CANDY REEF: a stinging jellyfish queen. Wobbly bullets, little jellies, and she
      vanishes and pops up somewhere else (sparkles show where, first). */
   {
-    id: 'jelly', name: 'JELLY QUEEN', icon: '👑', bar: '#ff6fb5', r: 78,
+    id: 'jelly', name: 'STING QUEEN', icon: '👑', bar: '#ff6fb5', r: 78,
     intro: "Now you see her, now you don't!",
     minion: { kind: 'jelly', every: 170 },
     init(b) { b.s = { phase: 'float', t: 0, hx: b.homeX - 30, hy: b.y }; b.alpha = 1; },
@@ -876,12 +876,12 @@ const BOSSES = [
     draw: drawShark
   },
 
-  /* 8 — STORM SEA: the final boss, a shadow lotl. A bit of everything:
+  /* 8 — STORM SEA: the final boss, a storm sea dragon. A bit of everything:
      fireball fans, lightning columns, and gap walls. */
   {
-    id: 'shadow', name: 'SHADOW LOTL', icon: '⚡', bar: '#9b4dff', r: 96,
+    id: 'shadow', name: 'DARK LEVIATHAN', icon: '🐉', bar: '#9b4dff', r: 96,
     intro: 'The last boss. You can do it!', title: 'FINAL BOSS!',
-    angryText: 'SHADOW LOTL IS FURIOUS!',
+    angryText: 'THE LEVIATHAN IS FURIOUS!',
     minion: { kind: 'spiker', every: 260 },
     init(b) { b.s = { n: 0 }; },
     update(b, dt) {
@@ -1635,7 +1635,7 @@ function drawBackground() {
     ctx.fillStyle = '#fff6b0'; ctx.beginPath(); ctx.arc(22, -50, 5, 0, TAU); ctx.fill();
     ctx.restore();
   } else if (theme.name === 'STORM SEA') {
-    // the Shadow Lotl's castle on the horizon, and lightning now and then
+    // the Leviathan's castle on the horizon, and lightning now and then
     ctx.fillStyle = 'rgba(20,10,40,0.55)';
     const cx = W * 0.72, base = H - 105;
     ctx.fillRect(cx - 160, base - 170, 320, 170);
@@ -1762,209 +1762,373 @@ function drawClaw(x, y, s, ang, open, color, ink) {
   ctx.restore();
 }
 
-function drawMagma(b) {
-  const t = b.t;
-  ctx.translate(b.x, b.y);
-  ctx.fillStyle = 'rgba(255,90,54,0.22)';
-  ctx.beginPath(); ctx.arc(0, 0, b.r * 1.45 + Math.sin(t * 0.05) * 8, 0, TAU); ctx.fill();
-  const colors = { body: b.flash > 0 ? '#ffffff' : '#c0392b', fin: '#ff7a3d', gill: '#ffcc4d' };
-  drawLotl(0, 0, b.r, colors, { t, flip: true, seed: 7, trident: false });
-  // crown of spikes
-  ctx.strokeStyle = '#ffcc4d'; ctx.lineWidth = 8; ctx.lineCap = 'round';
-  for (let i = -2; i <= 2; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * 26, -b.r * 0.85);
-    ctx.lineTo(i * 30, -b.r * 1.3 - Math.abs(i) * -6 + Math.sin(t * 0.08 + i) * 4);
-    ctx.stroke();
-  }
+/* ---------- boss art helpers: these are monsters, not pets ----------
+   Every boss gets the same three ingredients: glowing eyes under a heavy
+   brow, teeth, and darker colours. No blush, no pouts, no big round eyes. */
+
+// A mean eye: a glowing iris, a slit pupil, and a heavy brow cutting across
+// the top. slant > 0 drops the brow on the left (a face looking left);
+// slant < 0 drops it on the right (the right-hand eye of a face looking at
+// you, so the two brows make a V). look nudges the pupil sideways.
+function meanEye(x, y, r, iris, skin, ink, slant, look) {
+  // steep, so it reads as a glare, not a sleepy half-closed lid
+  const s = (slant == null ? 0.4 : slant) * 1.35;
+  const yl = y - r * (0.25 - s), yr = y - r * (0.25 + s);
+  ctx.save();
+  ctx.globalAlpha *= 0.3; ctx.fillStyle = iris;
+  ctx.beginPath(); ctx.arc(x, y, r * 1.3, 0, TAU); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.8, 0, 0, TAU);
+  ctx.fillStyle = iris; ctx.fill();
+  ctx.clip();
+  ctx.fillStyle = '#140808';
+  ctx.beginPath(); ctx.ellipse(x + r * (look == null ? -0.2 : look), y + r * 0.08, r * 0.2, r * 0.62, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = skin;   // the lid, cut along the brow line
+  ctx.beginPath();
+  ctx.moveTo(x - r * 1.4, yl); ctx.lineTo(x + r * 1.4, yr);
+  ctx.lineTo(x + r * 1.4, y - r * 2); ctx.lineTo(x - r * 1.4, y - r * 2);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = ink; ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(2.5, r * 0.16);
+  ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.8, 0, 0, TAU); ctx.stroke();
+  ctx.lineWidth = Math.max(5, r * 0.5);
+  ctx.beginPath(); ctx.moveTo(x - r * 1.35, yl); ctx.lineTo(x + r * 1.35, yr); ctx.stroke();
+  ctx.restore();
 }
 
+// A row of n fangs along y from x0 to x1. dir 1 points them down, -1 up.
+function fangs(x0, x1, y, n, size, dir, color) {
+  ctx.save();
+  ctx.fillStyle = color || '#fff6e0'; ctx.strokeStyle = '#1a0d0d';
+  ctx.lineWidth = Math.max(1.5, size * 0.14); ctx.lineJoin = 'round';
+  const w = (x1 - x0) / n;
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * w, s = size * (i % 2 ? 0.65 : 1);
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w / 2, y + dir * s); ctx.lineTo(x + w, y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// a lumpy, jagged rock outline
+function rockShape(x, y, rx, ry, seed, n) {
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU + seed;
+    const k = 0.84 + 0.16 * Math.abs(Math.sin(seed * 3.7 + i * 2.39));
+    const px = x + Math.cos(a) * rx * k, py = y + Math.sin(a) * ry * k;
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+}
+
+// a glowing crack: a wide soft stroke under a thin hot one
+function glowPath(pts, color, core) {
+  const path = () => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); };
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.save(); ctx.globalAlpha *= 0.4; ctx.strokeStyle = color || '#ff6a1a'; ctx.lineWidth = 13; path(); ctx.stroke(); ctx.restore();
+  ctx.strokeStyle = core || '#ffe08a'; ctx.lineWidth = 4; path(); ctx.stroke();
+  ctx.restore();
+}
+
+/* 1 — a golem of cooling lava rock, fire pouring off its head */
+function drawMagma(b) {
+  const r = b.r, t = b.t, hit = b.flash > 0;
+  const rock = hit ? '#fff' : '#3d2622', rock2 = hit ? '#fff' : '#5a382d', ink = '#140806';
+  ctx.translate(b.x, b.y);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.fillStyle = 'rgba(255,90,54,0.22)';
+  ctx.beginPath(); ctx.arc(0, 0, r * 1.45 + Math.sin(t * 0.05) * 8, 0, TAU); ctx.fill();
+  // flames
+  for (let i = -3; i <= 3; i++) {
+    const x = i * r * 0.2, base = -r * 0.6 - (3 - Math.abs(i)) * r * 0.04;
+    const h = r * (0.55 + 0.22 * Math.sin(t * 0.21 + i * 1.9)) * (1 - Math.abs(i) * 0.1);
+    const sway = Math.sin(t * 0.13 + i) * r * 0.08;
+    for (const [col, k] of [['#ff5a1a', 1], ['#ffd23a', 0.55]]) {
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(x - r * 0.15 * k, base);
+      ctx.quadraticCurveTo(x - r * 0.14 * k, base - h * k * 0.6, x + sway, base - h * k);
+      ctx.quadraticCurveTo(x + r * 0.14 * k, base - h * k * 0.6, x + r * 0.15 * k, base);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  const fist = sd => {
+    const fx = -r * 0.95 + Math.sin(t * 0.06 + sd) * 10, fy = sd * r * 0.7 + Math.cos(t * 0.05 + sd * 2) * 10;
+    ctx.fillStyle = rock2; ctx.strokeStyle = ink; ctx.lineWidth = 6;
+    rockShape(fx, fy, r * 0.36, r * 0.32, 2 + sd, 8); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 4;
+    for (let k = -1; k <= 1; k++) {
+      ctx.beginPath(); ctx.moveTo(fx - r * 0.3, fy + k * r * 0.1); ctx.lineTo(fx - r * 0.12, fy + k * r * 0.11); ctx.stroke();
+    }
+    glowPath([[fx + r * 0.08, fy - r * 0.2], [fx + r * 0.14, fy], [fx + r * 0.04, fy + r * 0.18]]);
+  };
+  fist(-1);
+  // the body
+  ctx.fillStyle = rock; ctx.strokeStyle = ink; ctx.lineWidth = 8;
+  rockShape(0, 0, r, r * 0.9, 0.4, 13); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = rock2;
+  rockShape(r * 0.3, -r * 0.4, r * 0.32, r * 0.2, 1.3, 7); ctx.fill();
+  rockShape(r * 0.45, r * 0.45, r * 0.28, r * 0.18, 2.1, 7); ctx.fill();
+  for (const pts of [[[0.15, -0.8], [0.3, -0.5], [0.2, -0.3], [0.45, -0.05]],
+                     [[0.6, 0.05], [0.8, 0.25], [0.72, 0.5]],
+                     [[0.0, 0.85], [0.15, 0.62], [0.02, 0.5]],
+                     [[0.85, -0.45], [0.65, -0.3]]]) {
+    glowPath(pts.map(([px, py]) => [px * r, py * r]));
+  }
+  // a furnace for a mouth
+  const open = 0.2 + 0.07 * Math.sin(t * 0.09);
+  const mx0 = -r * 0.9, mx1 = -r * 0.12, my = r * 0.26;
+  ctx.fillStyle = '#ff6a1a'; ctx.strokeStyle = ink; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(mx0, my);
+  ctx.lineTo(mx1, my - r * 0.04);
+  ctx.lineTo(mx1 + r * 0.02, my + r * open);
+  ctx.quadraticCurveTo((mx0 + mx1) / 2, my + r * open * 1.7, mx0 + r * 0.04, my + r * open * 0.7);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffd23a';
+  ctx.beginPath(); ctx.ellipse((mx0 + mx1) / 2, my + r * open * 0.65, r * 0.2, r * open * 0.3, 0, 0, TAU); ctx.fill();
+  fangs(mx0 + r * 0.04, mx1 - r * 0.02, my - r * 0.01, 5, r * 0.14, 1);
+  fangs(mx0 + r * 0.16, mx1 - r * 0.1, my + r * open * 1.12, 4, r * 0.1, -1);
+  const iris = b.angry ? '#ff3a1a' : '#ffd23a';
+  meanEye(-r * 0.62, -r * 0.18, r * 0.17, iris, rock, ink, -0.45);
+  meanEye(-r * 0.18, -r * 0.22, r * 0.18, iris, rock, ink, 0.45);
+  fist(1);
+}
+
+/* 2 — a swamp toad with warts, tusks and a nasty frown */
 function drawCroak(b) {
   const r = b.r, t = b.t, hit = b.flash > 0, s = b.s;
-  const ink = '#1d3315';
+  const ink = '#16210c', skin = hit ? '#fff' : '#5b7a2c', dark = hit ? '#fff' : '#3d561b', belly = hit ? '#fff' : '#b5ab62';
   ctx.translate(b.x, b.y);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   const hop = s.phase === 'hop' ? Math.sin(Math.PI * Math.min(1, s.t / 38)) : 0;
   ctx.scale(1 - hop * 0.08, 1 + hop * 0.12);
-  // back legs, folded behind (it faces left)
   for (const sd of [-1, 1]) {
-    ctx.fillStyle = hit ? '#fff' : '#3f9a3a';
-    ctx.beginPath(); ctx.ellipse(r * 0.6, sd * r * 0.55, r * 0.55, r * 0.3, sd * 0.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.ellipse(r * 0.6, sd * r * 0.55, r * 0.58, r * 0.32, sd * 0.5, 0, TAU); ctx.fill();
     ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.stroke();
   }
-  // body + belly
-  ctx.fillStyle = hit ? '#fff' : '#58c24f';
+  ctx.fillStyle = skin;
   ctx.beginPath(); ctx.ellipse(0, 0, r * 1.05, r * 0.82, 0, 0, TAU); ctx.fill();
   ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.stroke();
-  ctx.fillStyle = hit ? '#fff' : '#d8f59a';
-  ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.34, r * 0.62, r * 0.38, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = 'rgba(30,90,30,0.5)';
-  for (const [sx, sy, sr] of [[0.35, -0.3, 0.14], [0.65, 0.05, 0.1], [0.12, -0.5, 0.08], [0.5, -0.55, 0.07]]) {
-    ctx.beginPath(); ctx.arc(sx * r, sy * r, sr * r, 0, TAU); ctx.fill();
+  ctx.fillStyle = belly;
+  ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.38, r * 0.6, r * 0.32, 0, 0, TAU); ctx.fill();
+  // warts
+  for (const [sx, sy, sr] of [[0.35, -0.3, 0.12], [0.65, 0.05, 0.09], [0.15, -0.5, 0.08], [0.55, -0.55, 0.07],
+                              [0.85, -0.25, 0.07], [0.05, -0.12, 0.06], [0.45, 0.3, 0.07], [0.8, 0.4, 0.06]]) {
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(sx * r, sy * r, sr * r, 0, TAU); ctx.fill();
+    ctx.fillStyle = hit ? '#fff' : '#86a640';
+    ctx.beginPath(); ctx.arc(sx * r - sr * r * 0.3, sy * r - sr * r * 0.3, sr * r * 0.35, 0, TAU); ctx.fill();
   }
-  // front feet
-  ctx.fillStyle = hit ? '#fff' : '#3f9a3a';
-  for (const fx of [-0.6, -0.15]) { ctx.beginPath(); ctx.ellipse(fx * r, r * 0.8, r * 0.2, r * 0.1, 0, 0, TAU); ctx.fill(); ctx.stroke(); }
-  // big eyes on top, looking at you
+  // clawed front feet
+  for (const fx of [-0.6, -0.15]) {
+    ctx.fillStyle = dark; ctx.strokeStyle = ink; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.ellipse(fx * r, r * 0.8, r * 0.2, r * 0.1, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    fangs(fx * r - r * 0.24, fx * r + r * 0.02, r * 0.86, 3, r * 0.1, 1);
+  }
+  // bulging eyes on top, glaring
+  const iris = b.angry ? '#ff4a1a' : '#ffb21a';
   for (const ex of [-0.6, -0.08]) {
-    ctx.fillStyle = hit ? '#fff' : '#58c24f';
-    ctx.beginPath(); ctx.arc(ex * r, -r * 0.7, r * 0.28, 0, TAU); ctx.fill();
-    ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.stroke();
-    ctx.fillStyle = '#fff8d6'; ctx.beginPath(); ctx.arc(ex * r, -r * 0.72, r * 0.19, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(ex * r - r * 0.07, -r * 0.7, r * 0.09, 0, TAU); ctx.fill();
-    if (b.angry) {
-      ctx.strokeStyle = ink; ctx.lineWidth = 7;
-      ctx.beginPath(); ctx.moveTo(ex * r - r * 0.24, -r * 1.02); ctx.lineTo(ex * r + r * 0.2, -r * 0.9); ctx.stroke();
-    }
+    ctx.fillStyle = skin; ctx.strokeStyle = ink; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(ex * r, -r * 0.7, r * 0.27, 0, TAU); ctx.fill(); ctx.stroke();
+    meanEye(ex * r - r * 0.02, -r * 0.68, r * 0.19, iris, skin, ink, ex < -0.3 ? -0.45 : 0.45);
   }
-  // mouth: a wide grin, wide open while the tongue is out
-  ctx.strokeStyle = ink; ctx.lineWidth = 6;
+  ctx.strokeStyle = ink; ctx.lineWidth = 7;
   if (s.phase === 'lick') {
-    ctx.fillStyle = '#7a1630';
-    ctx.beginPath(); ctx.ellipse(-r * 0.66, r * 0.18, r * 0.22, r * 0.2, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    // jaws wide open for the tongue
+    ctx.fillStyle = '#4a0c1c';
+    ctx.beginPath(); ctx.ellipse(-r * 0.66, r * 0.18, r * 0.27, r * 0.22, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    fangs(-r * 0.86, -r * 0.46, -r * 0.01, 4, r * 0.11, 1);
+    fangs(-r * 0.82, -r * 0.5, r * 0.37, 3, r * 0.09, -1);
   } else {
-    ctx.beginPath(); ctx.moveTo(-r * 0.98, r * 0.06); ctx.quadraticCurveTo(-r * 0.45, r * 0.36, r * 0.1, r * 0.1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r * 0.98, r * 0.2); ctx.quadraticCurveTo(-r * 0.45, -r * 0.02, r * 0.1, r * 0.16); ctx.stroke();
+    // tusks poking up out of the lower lip
+    for (const [tx, ty] of [[-0.78, 0.17], [-0.25, 0.12]]) {
+      ctx.fillStyle = '#f3ead2'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(tx * r - r * 0.055, ty * r); ctx.lineTo(tx * r, ty * r - r * 0.17); ctx.lineTo(tx * r + r * 0.055, ty * r);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
   }
 }
 
+/* 3 — an armoured crab king: spiked shell, glowing eyes, snapping mandibles */
 function drawPinch(b) {
   const r = b.r, t = b.t, hit = b.flash > 0, out = b.s.clawsOut > 0;
-  const ink = '#4a1a0a', shell = hit ? '#fff' : '#e8552f', light = hit ? '#fff' : '#ff9a6b';
+  const ink = '#2a0805', shell = hit ? '#fff' : '#b02c18', light = hit ? '#fff' : '#d9512c', spike = hit ? '#fff' : '#f0d6a8';
   ctx.translate(b.x, b.y);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  // legs, scuttling
   for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) {
     const lx = sd * r * (0.35 + i * 0.22), w = Math.sin(t * 0.3 + i * 1.7 + sd) * 7;
     ctx.strokeStyle = ink; ctx.lineWidth = 15;
     ctx.beginPath(); ctx.moveTo(lx, r * 0.3); ctx.lineTo(lx + sd * r * 0.25, r * 0.62 + w); ctx.lineTo(lx + sd * r * 0.32, r * 0.95); ctx.stroke();
     ctx.strokeStyle = shell; ctx.lineWidth = 9; ctx.stroke();
   }
-  // arms up, claws on top (stubs while they are out flying)
   for (const sd of [-1, 1]) {
     ctx.strokeStyle = ink; ctx.lineWidth = 19;
     ctx.beginPath(); ctx.moveTo(sd * r * 0.7, -r * 0.1); ctx.lineTo(sd * r * 1.0, -r * 0.55); ctx.stroke();
     ctx.strokeStyle = shell; ctx.lineWidth = 12; ctx.stroke();
     if (!out) drawClaw(sd * r * 1.02, -r * 0.7, r * 0.45, -Math.PI / 2 - sd * 0.35, 0.25 + Math.sin(t * 0.12 + sd) * 0.2, shell, ink);
   }
-  // shell
+  // spikes along the top of the shell
+  ctx.fillStyle = spike; ctx.strokeStyle = ink; ctx.lineWidth = 4;
+  for (let i = 0; i < 7; i++) {
+    const a = Math.PI + 0.3 + i / 6 * (Math.PI - 0.6);
+    const bx = Math.cos(a) * r * 0.9, by = Math.sin(a) * r * 0.55;
+    const tx = Math.cos(a) * r * 1.12, ty = Math.sin(a) * r * 0.86;
+    const nx = -Math.sin(a) * r * 0.09, ny = Math.cos(a) * r * 0.06;
+    ctx.beginPath(); ctx.moveTo(bx - nx, by - ny); ctx.lineTo(tx, ty); ctx.lineTo(bx + nx, by + ny); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
   ctx.fillStyle = shell;
   ctx.beginPath(); ctx.ellipse(0, 0, r * 0.95, r * 0.6, 0, 0, TAU); ctx.fill();
   ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.stroke();
   ctx.fillStyle = light;
-  ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.2, r * 0.42, r * 0.18, -0.2, 0, TAU); ctx.fill();
-  // eyes on stalks
+  ctx.beginPath(); ctx.ellipse(-r * 0.3, -r * 0.25, r * 0.3, r * 0.12, -0.2, 0, TAU); ctx.fill();
+  ctx.strokeStyle = ink; ctx.lineWidth = 4;
   for (const sd of [-1, 1]) {
-    ctx.strokeStyle = ink; ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.moveTo(sd * r * 0.25, -r * 0.45); ctx.lineTo(sd * r * 0.32, -r * 0.82); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(sd * r * 0.32, -r * 0.88, r * 0.15, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(sd * r * 0.32 - r * 0.05, -r * 0.88, r * 0.065, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(sd * r * 0.55, -r * 0.05); ctx.quadraticCurveTo(sd * r * 0.7, r * 0.15, sd * r * 0.6, r * 0.35); ctx.stroke();
   }
-  // grumpy mouth
-  ctx.strokeStyle = ink; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.arc(0, r * 0.3, r * 0.22, -2.5, -0.64); ctx.stroke();
-  drawCrown(0, -r * 1.02, r * 0.5);
+  // glaring eyes on stalks
+  const iris = b.angry ? '#ff3a1a' : '#ffd23a';
+  for (const sd of [-1, 1]) {
+    ctx.strokeStyle = ink; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.moveTo(sd * r * 0.25, -r * 0.45); ctx.lineTo(sd * r * 0.32, -r * 0.82); ctx.stroke();
+    ctx.strokeStyle = shell; ctx.lineWidth = 4; ctx.stroke();
+    meanEye(sd * r * 0.32, -r * 0.88, r * 0.15, iris, shell, ink, sd * 0.4, -0.15);
+  }
+  // mouth full of teeth, with mandibles at the corners
+  ctx.fillStyle = '#2a0503'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-r * 0.32, r * 0.18); ctx.lineTo(r * 0.32, r * 0.18);
+  ctx.quadraticCurveTo(0, r * 0.52, -r * 0.32, r * 0.18); ctx.closePath(); ctx.fill(); ctx.stroke();
+  fangs(-r * 0.3, r * 0.3, r * 0.18, 6, r * 0.1, 1);
+  for (const sd of [-1, 1]) {
+    const snap = Math.sin(t * 0.25) * 0.15;
+    ctx.save(); ctx.translate(sd * r * 0.32, r * 0.2); ctx.rotate(sd * snap);
+    ctx.fillStyle = spike; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0, -r * 0.05); ctx.quadraticCurveTo(sd * r * 0.12, r * 0.08, -sd * r * 0.04, r * 0.2);
+    ctx.quadraticCurveTo(sd * r * 0.04, r * 0.06, 0, r * 0.05); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  drawCrown(0, -r * 1.02, r * 0.5, '#d9a21c');
 }
 
+/* 4 — a spiny ice puffer with a mouth full of fangs */
 function drawPuff(b) {
   const r = b.r, t = b.t, hit = b.flash > 0, puff = clamp((r - 70) / 42, 0, 1);
-  const ink = '#1d4a6b';
+  const ink = '#0b2236', body = hit ? '#fff' : '#3f7aa6', belly = hit ? '#fff' : '#9cc7de', fin = hit ? '#fff' : '#27577e';
   ctx.translate(b.x + (b.s.phase === 'inflate' ? Math.sin(t * 1.7) * 3 * puff : 0), b.y);
   ctx.lineJoin = 'round';
-  // tail fin, on the right
-  ctx.fillStyle = hit ? '#fff' : '#7cc8ef'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  // forked tail
+  ctx.fillStyle = fin; ctx.strokeStyle = ink; ctx.lineWidth = 5;
   const wag = Math.sin(t * 0.15) * 8;
-  ctx.beginPath(); ctx.moveTo(r * 0.85, 0); ctx.lineTo(r * 1.4, -r * 0.42 + wag); ctx.lineTo(r * 1.4, r * 0.42 + wag); ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  // spikes grow as it puffs
+  ctx.beginPath(); ctx.moveTo(r * 0.85, 0); ctx.lineTo(r * 1.5, -r * 0.5 + wag); ctx.lineTo(r * 1.25, wag * 0.5);
+  ctx.lineTo(r * 1.5, r * 0.5 + wag); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // ice spikes, longer as it puffs
   ctx.fillStyle = hit ? '#fff' : '#e8fbff'; ctx.lineWidth = 3;
-  const n = 22, len = 8 + puff * 26;
+  const n = 22, len = 18 + puff * 28;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * TAU;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a - 0.1) * r * 0.96, Math.sin(a - 0.1) * r * 0.96);
+    ctx.moveTo(Math.cos(a - 0.08) * r * 0.96, Math.sin(a - 0.08) * r * 0.96);
     ctx.lineTo(Math.cos(a) * (r + len), Math.sin(a) * (r + len));
-    ctx.lineTo(Math.cos(a + 0.1) * r * 0.96, Math.sin(a + 0.1) * r * 0.96);
+    ctx.lineTo(Math.cos(a + 0.08) * r * 0.96, Math.sin(a + 0.08) * r * 0.96);
     ctx.closePath(); ctx.fill(); ctx.stroke();
   }
-  // body
-  ctx.fillStyle = hit ? '#fff' : '#a8dcf5';
+  ctx.fillStyle = body;
   wobbleCircle(0, 0, r, 4); ctx.fill();
   ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.stroke();
-  ctx.fillStyle = hit ? '#fff' : '#e3f7ff';
-  ctx.beginPath(); ctx.ellipse(-r * 0.1, r * 0.4, r * 0.6, r * 0.38, 0, 0, TAU); ctx.fill();
-  ctx.fillStyle = 'rgba(40,110,160,0.35)';
-  for (const [sx, sy] of [[0.2, -0.5], [0.5, -0.2], [0.05, -0.15], [0.55, 0.3]]) {
+  ctx.fillStyle = belly;
+  ctx.beginPath(); ctx.ellipse(-r * 0.1, r * 0.42, r * 0.58, r * 0.34, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = 'rgba(10,40,70,0.45)';
+  for (const [sx, sy] of [[0.2, -0.5], [0.5, -0.2], [0.05, -0.12], [0.55, 0.28], [0.35, -0.72]]) {
     ctx.beginPath(); ctx.arc(sx * r, sy * r, r * 0.08, 0, TAU); ctx.fill();
   }
-  // side fin
-  ctx.fillStyle = hit ? '#fff' : '#7cc8ef'; ctx.strokeStyle = ink; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.ellipse(r * 0.2, r * 0.15, r * 0.24, r * 0.12, 0.6 + Math.sin(t * 0.2) * 0.3, 0, TAU); ctx.fill(); ctx.stroke();
-  // eye and pouty mouth, facing left
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-r * 0.42, -r * 0.3, r * 0.22, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(-r * 0.5, -r * 0.28, r * 0.1, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-r * 0.47, -r * 0.33, r * 0.035, 0, TAU); ctx.fill();
-  if (b.angry) {
-    ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-r * 0.68, -r * 0.6); ctx.lineTo(-r * 0.25, -r * 0.48); ctx.stroke();
+  // it cracks and glows when it's about to pop
+  if (puff > 0.05) {
+    ctx.save(); ctx.globalAlpha *= puff;
+    for (const pts of [[[0.1, -0.85], [0.25, -0.55], [0.15, -0.35]], [[0.7, -0.5], [0.5, -0.35], [0.6, -0.1]], [[0.75, 0.4], [0.5, 0.55]]]) {
+      glowPath(pts.map(([px, py]) => [px * r, py * r]), '#9ff0ff', '#ffffff');
+    }
+    ctx.restore();
   }
-  ctx.fillStyle = '#ff7aa0'; ctx.strokeStyle = ink; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.ellipse(-r * 0.88, r * 0.05, r * 0.1, r * (0.08 + puff * 0.05), 0, 0, TAU); ctx.fill(); ctx.stroke();
-  // cheeks go red when it's about to pop
-  ctx.fillStyle = 'rgba(255,90,120,' + (0.15 + puff * 0.45) + ')';
-  ctx.beginPath(); ctx.ellipse(-r * 0.55, r * 0.05, r * 0.14, r * 0.09, 0, 0, TAU); ctx.fill();
-  // a frosty little ice crown
-  ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#7cc8ef'; ctx.lineWidth = 3;
+  // a spiny side fin
+  ctx.save(); ctx.translate(r * 0.12, r * 0.12); ctx.rotate(0.5 + Math.sin(t * 0.2) * 0.25);
+  ctx.fillStyle = fin; ctx.strokeStyle = ink; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -r * 0.1);
+  ctx.lineTo(r * 0.42, -r * 0.16); ctx.lineTo(r * 0.3, -r * 0.03); ctx.lineTo(r * 0.44, r * 0.06);
+  ctx.lineTo(r * 0.28, r * 0.1); ctx.lineTo(r * 0.36, r * 0.2); ctx.lineTo(0, r * 0.1);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  // gaping, fanged mouth
+  const my = r * 0.12, ry = r * (0.13 + puff * 0.06);
+  ctx.fillStyle = '#16060f'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(-r * 0.8, my, r * 0.2, ry, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  fangs(-r * 0.97, -r * 0.63, my - ry * 0.8, 4, r * 0.11, 1);
+  fangs(-r * 0.93, -r * 0.67, my + ry * 0.8, 3, r * 0.09, -1);
+  const iris = b.angry || puff > 0.5 ? '#ff4a5a' : '#7df3ff';
+  meanEye(-r * 0.74, -r * 0.34, r * 0.14, iris, body, ink, -0.45);
+  meanEye(-r * 0.36, -r * 0.34, r * 0.2, iris, body, ink, 0.45);
+  // a jagged crown of icicles
+  ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#3f7aa6'; ctx.lineWidth = 3;
   for (let i = -2; i <= 2; i++) {
-    const cx = i * r * 0.16, top = -r * (1.05 + (2 - Math.abs(i)) * 0.12) - puff * 20;
-    ctx.beginPath(); ctx.moveTo(cx - 8, -r * 0.92 - puff * 18); ctx.lineTo(cx, top); ctx.lineTo(cx + 8, -r * 0.92 - puff * 18); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const cx = i * r * 0.16, top = -r * (1.15 + (2 - Math.abs(i)) * 0.16) - puff * 22;
+    ctx.beginPath(); ctx.moveTo(cx - 9, -r * 0.92 - puff * 18); ctx.lineTo(cx, top); ctx.lineTo(cx + 9, -r * 0.92 - puff * 18);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
   }
 }
 
+// a point along a cubic curve, for putting suckers on tentacles
+function bez(a, b, c, d, u) {
+  const v = 1 - u;
+  return v * v * v * a + 3 * v * v * u * b + 3 * v * u * u * c + u * u * u * d;
+}
+
+/* 5 — a kraken: suckered tentacles, glaring eyes, a toothy maw */
 function drawKraken(b) {
   const r = b.r, t = b.t, hit = b.flash > 0;
-  const body = hit ? '#fff' : '#9c3fd0', ink = '#2a0c40';
+  const body = hit ? '#fff' : '#66248f', ink = '#1a0628', sucker = hit ? '#fff' : '#e3b0ff';
   ctx.translate(b.x, b.y);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  // tentacles, curling below
   for (let i = 0; i < 6; i++) {
     const bx = -r * 0.62 + i * r * 0.25;
     const sw = Math.sin(t * 0.05 + i * 1.1) * 30;
+    const xs = [bx, bx - 20 + sw, bx - 50 - sw, bx - 40 + sw * 0.6], ys = [r * 0.35, r * 0.9, r * 1.2, r * 1.6];
     for (const [col, lw] of [[ink, 24], [body, 16]]) {
       ctx.strokeStyle = col; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(bx, r * 0.35);
-      ctx.bezierCurveTo(bx - 20 + sw, r * 0.9, bx - 50 - sw, r * 1.2, bx - 40 + sw * 0.6, r * 1.6);
+      ctx.beginPath(); ctx.moveTo(xs[0], ys[0]);
+      ctx.bezierCurveTo(xs[1], ys[1], xs[2], ys[2], xs[3], ys[3]);
       ctx.stroke();
     }
+    ctx.fillStyle = sucker;
+    for (const u of [0.45, 0.62, 0.78, 0.92]) {
+      ctx.beginPath(); ctx.arc(bez(...xs, u), bez(...ys, u), 3.5, 0, TAU); ctx.fill();
+    }
   }
-  // mantle
   ctx.fillStyle = body;
   ctx.beginPath(); ctx.ellipse(0, -r * 0.25, r * 0.82, r * 0.92, 0, 0, TAU); ctx.fill();
   ctx.strokeStyle = ink; ctx.lineWidth = 7; ctx.stroke();
-  ctx.fillStyle = hit ? '#fff' : '#c77dff';
-  for (const [sx, sy, sr] of [[0.3, -0.75, 0.13], [-0.3, -0.85, 0.09], [0.5, -0.3, 0.1], [0.05, -1.0, 0.07]]) {
+  ctx.fillStyle = hit ? '#fff' : '#45156a';
+  for (const [sx, sy, sr] of [[0.3, -0.75, 0.13], [-0.3, -0.85, 0.09], [0.5, -0.3, 0.1], [0.05, -1.0, 0.07], [0.6, -0.65, 0.06]]) {
     ctx.beginPath(); ctx.arc(sx * r, sy * r, sr * r, 0, TAU); ctx.fill();
   }
-  // big yellow eyes with slit pupils
-  for (const ex of [-0.42, 0.12]) {
-    ctx.fillStyle = '#ffe14d'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(ex * r, -r * 0.05, r * 0.2, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#111';
-    ctx.beginPath(); ctx.ellipse(ex * r - r * 0.05, -r * 0.05, r * 0.05, r * 0.15, 0, 0, TAU); ctx.fill();
-    ctx.strokeStyle = ink; ctx.lineWidth = 7;
-    const tilt = b.angry ? 0.14 : 0.06;
-    ctx.beginPath(); ctx.moveTo(ex * r - r * 0.22, -r * (0.3 + tilt)); ctx.lineTo(ex * r + r * 0.2, -r * (0.3 - tilt)); ctx.stroke();
-  }
+  const iris = b.angry ? '#ff3a1a' : '#ffb21a';
+  meanEye(-r * 0.42, -r * 0.08, r * 0.2, iris, body, ink, -0.45);
+  meanEye(r * 0.14, -r * 0.08, r * 0.2, iris, body, ink, 0.45);
+  // the maw
+  ctx.fillStyle = '#16020f'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.ellipse(-r * 0.14, r * 0.3, r * 0.26, r * 0.13, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  fangs(-r * 0.36, r * 0.08, r * 0.2, 5, r * 0.1, 1);
+  fangs(-r * 0.3, r * 0.02, r * 0.41, 4, r * 0.08, -1);
 }
 
+/* 6 — a stinging jellyfish queen: glowing veins, barbed tentacles, a nasty grin */
 function drawJelly(b) {
   const r = b.r, t = b.t, hit = b.flash > 0, s = b.s;
-  // sparkles where she is about to pop back in
   if (s.phase === 'appear') {
     ctx.save();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#ff7ae0'; ctx.lineWidth = 4; ctx.lineCap = 'round';
     for (let i = 0; i < 8; i++) {
       const a = i / 8 * TAU + t * 0.08, d = 30 + (1 - s.t / 36) * 70;
       const x = s.hx + Math.cos(a) * d, y = s.hy + Math.sin(a) * d;
@@ -1975,18 +2139,22 @@ function drawJelly(b) {
   ctx.globalAlpha *= b.alpha;
   ctx.translate(b.x, b.y + r * 0.35);
   const pulse = Math.sin(t * 0.08);
-  // tentacles
+  // barbed stinging tentacles, crackling
   ctx.lineCap = 'round';
   for (let i = 0; i < 7; i++) {
     const x0 = -r * 0.72 + i * r * 0.24;
-    ctx.strokeStyle = i % 2 ? 'rgba(255,190,225,0.9)' : 'rgba(255,120,190,0.9)'; ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.moveTo(x0, r * 0.15);
-    for (let k = 1; k <= 6; k++) ctx.lineTo(x0 + Math.sin(t * 0.09 + i + k * 0.9) * 10, r * 0.15 + k * r * 0.2);
-    ctx.stroke();
+    const pts = [];
+    for (let k = 0; k <= 6; k++) pts.push([x0 + Math.sin(t * 0.09 + i + k * 0.9) * 10, r * 0.15 + k * r * 0.2]);
+    ctx.strokeStyle = i % 2 ? '#c42a9c' : '#ff4fd8'; ctx.lineWidth = 7;
+    ctx.beginPath(); pts.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+    ctx.strokeStyle = '#ffd0f4'; ctx.lineWidth = 3;
+    for (let k = 2; k <= 6; k += 2) {
+      const [x, y] = pts[k];
+      ctx.beginPath(); ctx.moveTo(x - 9, y - 7); ctx.lineTo(x, y); ctx.lineTo(x + 9, y - 7); ctx.stroke();
+    }
   }
-  // the bell, with a scalloped edge
   const top = -r * (1.1 + pulse * 0.05), wide = r * (1 - pulse * 0.04);
-  ctx.fillStyle = hit ? '#fff' : 'rgba(255,120,190,0.92)';
+  ctx.fillStyle = hit ? '#fff' : 'rgba(128,22,98,0.94)';
   ctx.beginPath(); ctx.moveTo(-wide, r * 0.15);
   ctx.bezierCurveTo(-wide, top, wide, top, wide, r * 0.15);
   for (let i = 5; i >= 0; i--) {
@@ -1994,25 +2162,28 @@ function drawJelly(b) {
     ctx.quadraticCurveTo(xm, r * 0.38, x1, r * 0.15);
   }
   ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#a3236a'; ctx.lineWidth = 6; ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.beginPath(); ctx.ellipse(-r * 0.4, -r * 0.55, r * 0.22, r * 0.12, -0.5, 0, TAU); ctx.fill();
-  // face
-  ctx.fillStyle = '#3a0f2a';
-  for (const ex of [-0.38, 0.12]) {
-    ctx.beginPath(); ctx.ellipse(ex * r, -r * 0.25, r * 0.08, r * 0.12, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ex * r + 3, -r * 0.3, r * 0.03, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#3a0f2a';
+  ctx.strokeStyle = '#3a0628'; ctx.lineWidth = 6; ctx.stroke();
+  // glowing veins
+  for (const [x1, y1, x2, y2] of [[-0.7, 0.05, -0.45, -0.6], [0.7, 0.05, 0.5, -0.6], [-0.05, 0.1, 0.0, -0.85]]) {
+    ctx.save(); ctx.globalAlpha *= 0.55 + pulse * 0.25;
+    glowPath([[x1 * r, y1 * r], [(x1 + x2) / 2 * r + 8, (y1 + y2) / 2 * r], [x2 * r, y2 * r]], '#ff4fd8', '#ffb8ef');
+    ctx.restore();
   }
-  ctx.strokeStyle = '#3a0f2a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  if (b.angry) { ctx.beginPath(); ctx.arc(-r * 0.13, r * 0.05, r * 0.12, -2.6, -0.5); ctx.stroke(); }
-  else { ctx.beginPath(); ctx.arc(-r * 0.13, -r * 0.08, r * 0.12, 0.5, 2.6); ctx.stroke(); }
-  drawCrown(-r * 0.05, top + r * 0.15, r * 0.6);
+  const iris = b.angry ? '#ffe14d' : '#9dff6a';
+  meanEye(-r * 0.38, -r * 0.3, r * 0.15, iris, hit ? '#fff' : '#80166a', '#2a0420', -0.45, 0);
+  meanEye(r * 0.12, -r * 0.3, r * 0.15, iris, hit ? '#fff' : '#80166a', '#2a0420', 0.45, 0);
+  // a wide, fanged grin
+  ctx.fillStyle = '#1a0212'; ctx.strokeStyle = '#2a0420'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-r * 0.48, -r * 0.05); ctx.quadraticCurveTo(-r * 0.13, r * 0.03, r * 0.22, -r * 0.05);
+  ctx.quadraticCurveTo(-r * 0.13, r * 0.3, -r * 0.48, -r * 0.05); ctx.closePath(); ctx.fill(); ctx.stroke();
+  fangs(-r * 0.4, r * 0.14, -r * 0.02, 6, r * 0.09, 1);
+  drawCrown(-r * 0.05, top + r * 0.15, r * 0.6, '#c9a227');
 }
 
+/* 7 — a ghost pirate shark: scarred, see-through, all teeth */
 function drawShark(b) {
   const r = b.r, t = b.t, hit = b.flash > 0, dash = b.s.phase === 'dash';
-  const body = hit ? '#fff' : '#a9d8d0', dark = hit ? '#fff' : '#5f9f98', ink = '#163634';
+  const body = hit ? '#fff' : '#8fc4bc', dark = hit ? '#fff' : '#4a827c', ink = '#0f2826';
   ctx.translate(b.x, b.y);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   if (dash) {
@@ -2022,8 +2193,7 @@ function drawShark(b) {
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 120 + i * 20, y); ctx.stroke();
     }
   }
-  ctx.globalAlpha *= 0.82 + Math.sin(t * 0.1) * 0.1;   // a ghost — a little see-through
-  // ghostly wisps trailing off the tail
+  ctx.globalAlpha *= 0.85 + Math.sin(t * 0.1) * 0.1;
   ctx.fillStyle = 'rgba(200,255,240,0.25)';
   for (let i = 0; i < 3; i++) {
     ctx.beginPath(); ctx.arc(r * (1.6 + i * 0.35), Math.sin(t * 0.08 + i) * 12, r * (0.22 - i * 0.05), 0, TAU); ctx.fill();
@@ -2032,9 +2202,10 @@ function drawShark(b) {
   ctx.fillStyle = dark; ctx.strokeStyle = ink; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.moveTo(r * 0.85, 0); ctx.lineTo(r * 1.55, -r * 0.6 + wag); ctx.lineTo(r * 1.3, 0); ctx.lineTo(r * 1.5, r * 0.5 + wag); ctx.closePath();
   ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-r * 0.1, -r * 0.5); ctx.lineTo(r * 0.3, -r * 1.12); ctx.lineTo(r * 0.5, -r * 0.42); ctx.closePath();
+  // a torn dorsal fin
+  ctx.beginPath(); ctx.moveTo(-r * 0.1, -r * 0.5); ctx.lineTo(r * 0.3, -r * 1.12); ctx.lineTo(r * 0.36, -r * 0.88);
+  ctx.lineTo(r * 0.28, -r * 0.8); ctx.lineTo(r * 0.5, -r * 0.42); ctx.closePath();
   ctx.fill(); ctx.stroke();
-  // body, nose to the left
   ctx.fillStyle = body;
   ctx.beginPath(); ctx.moveTo(-r * 1.3, r * 0.05);
   ctx.quadraticCurveTo(-r * 1.0, -r * 0.68, r * 0.2, -r * 0.58);
@@ -2042,26 +2213,32 @@ function drawShark(b) {
   ctx.quadraticCurveTo(r * 1.0, r * 0.5, 0, r * 0.55);
   ctx.quadraticCurveTo(-r * 0.95, r * 0.55, -r * 1.3, r * 0.05);
   ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = hit ? '#fff' : '#e6fff8';
-  ctx.beginPath(); ctx.ellipse(-r * 0.3, r * 0.3, r * 0.7, r * 0.2, 0.05, 0, TAU); ctx.fill();
-  // gills + fin
+  ctx.fillStyle = hit ? '#fff' : '#d5f0ea';
+  ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.36, r * 0.6, r * 0.16, 0.05, 0, TAU); ctx.fill();
+  // ribs showing through — it's a ghost
+  ctx.strokeStyle = 'rgba(15,40,38,0.35)'; ctx.lineWidth = 5;
+  for (let i = 0; i < 4; i++) {
+    const x = r * (0.05 + i * 0.2);
+    ctx.beginPath(); ctx.moveTo(x, -r * 0.35); ctx.quadraticCurveTo(x + r * 0.1, 0, x, r * 0.3); ctx.stroke();
+  }
   ctx.strokeStyle = ink; ctx.lineWidth = 4;
-  for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-r * 0.25 + i * 14, -r * 0.2); ctx.lineTo(-r * 0.3 + i * 14, r * 0.15); ctx.stroke(); }
+  for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-r * 0.32 + i * 14, -r * 0.2); ctx.lineTo(-r * 0.37 + i * 14, r * 0.12); ctx.stroke(); }
   ctx.fillStyle = dark; ctx.lineWidth = 5;
   ctx.beginPath(); ctx.moveTo(0, r * 0.35); ctx.lineTo(r * 0.35, r * 0.85); ctx.lineTo(r * 0.4, r * 0.35); ctx.closePath(); ctx.fill(); ctx.stroke();
-  // toothy grin
-  ctx.fillStyle = '#2a1a1a';
-  ctx.beginPath(); ctx.moveTo(-r * 1.15, r * 0.12); ctx.quadraticCurveTo(-r * 0.75, r * 0.42, -r * 0.4, r * 0.18); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#fff';
-  for (let i = 0; i < 5; i++) {
-    const x = -r * 1.08 + i * r * 0.14;
-    ctx.beginPath(); ctx.moveTo(x, r * 0.15); ctx.lineTo(x + r * 0.06, r * 0.27); ctx.lineTo(x + r * 0.12, r * 0.17); ctx.closePath(); ctx.fill();
+  // jaws, open, two rows of teeth
+  ctx.fillStyle = '#1a0a0a'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-r * 1.22, r * 0.08); ctx.lineTo(-r * 0.4, r * 0.12);
+  ctx.quadraticCurveTo(-r * 0.8, r * 0.62, -r * 1.22, r * 0.08); ctx.closePath(); ctx.fill(); ctx.stroke();
+  fangs(-r * 1.15, -r * 0.45, r * 0.09, 7, r * 0.14, 1);
+  fangs(-r * 0.98, -r * 0.6, r * 0.32, 4, r * 0.1, -1);
+  // a scar across the glowing eye
+  meanEye(-r * 0.78, -r * 0.2, r * 0.15, '#7dffa0', body, ink, 0.45);
+  ctx.strokeStyle = ink; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-r * 0.6, -r * 0.48); ctx.lineTo(-r * 0.4, -r * 0.04); ctx.stroke();
+  for (let i = 0; i < 3; i++) {
+    const u = 0.25 + i * 0.25, x = -r * 0.6 + r * 0.2 * u, y = -r * 0.48 + r * 0.44 * u;
+    ctx.beginPath(); ctx.moveTo(x - 7, y + 5); ctx.lineTo(x + 7, y - 5); ctx.stroke();
   }
-  // glowing ghost eye
-  ctx.fillStyle = 'rgba(120,255,160,0.35)'; ctx.beginPath(); ctx.arc(-r * 0.75, -r * 0.18, r * 0.2, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#7dffa0'; ctx.beginPath(); ctx.arc(-r * 0.75, -r * 0.18, r * 0.1, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#0d2a1a'; ctx.beginPath(); ctx.arc(-r * 0.78, -r * 0.18, r * 0.045, 0, TAU); ctx.fill();
-  // pirate hat
   ctx.save(); ctx.translate(-r * 0.45, -r * 0.62); ctx.rotate(-0.15);
   ctx.fillStyle = '#1d1a24'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(-r * 0.55, 0); ctx.quadraticCurveTo(0, -r * 0.75, r * 0.55, 0); ctx.quadraticCurveTo(0, -r * 0.15, -r * 0.55, 0);
@@ -2073,10 +2250,12 @@ function drawShark(b) {
   ctx.restore();
 }
 
+/* 8 — the final boss: a storm sea dragon, its long spiny body coiling away */
 function drawShadow(b) {
-  const t = b.t, r = b.r;
+  const t = b.t, r = b.r, hit = b.flash > 0;
+  const skin = hit ? '#fff' : '#2b1740', belly = hit ? '#fff' : '#4d2c72', fin = hit ? '#fff' : '#8a3df0', ink = '#0d0418';
   ctx.translate(b.x, b.y);
-  // dark aura with crackles
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.fillStyle = 'rgba(110,40,200,0.25)';
   ctx.beginPath(); ctx.arc(0, 0, r * 1.5 + Math.sin(t * 0.06) * 10, 0, TAU); ctx.fill();
   ctx.strokeStyle = 'rgba(220,180,255,0.7)'; ctx.lineWidth = 3;
@@ -2087,21 +2266,66 @@ function drawShadow(b) {
     ctx.lineTo(Math.cos(a + 0.2) * d, Math.sin(a + 0.2) * d);
     ctx.stroke();
   }
-  const colors = { body: b.flash > 0 ? '#ffffff' : '#2b1740', fin: '#6b2fd6', gill: '#c04dff', eye: '#ff5cf0' };
-  drawLotl(0, 0, r, colors, { t, flip: true, seed: 11, trident: false });
-  // angry brows over the glowing eyes (it faces left, so mirror x)
-  ctx.strokeStyle = '#ff5cf0'; ctx.lineWidth = 7; ctx.lineCap = 'round';
-  for (const sd of [-1, 1]) {
-    ctx.beginPath(); ctx.moveTo(-r * 0.14, sd * r * 0.5); ctx.lineTo(-r * 0.5, sd * r * (b.angry ? 0.36 : 0.42)); ctx.stroke();
+  // the body, tail end first so each segment overlaps the one behind it
+  const seg = [];
+  for (let i = 0; i < 9; i++) {
+    const u = i / 8;
+    seg.push({ x: r * (0.25 + u * 1.65), y: r * 0.22 + Math.sin(t * 0.07 - i * 0.8) * r * 0.35 * u, rr: r * (0.48 - u * 0.33) });
   }
-  // horns
-  ctx.fillStyle = '#c04dff'; ctx.strokeStyle = '#1a0a2a'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
-  for (const sd of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(sd * r * 0.3 - 14, -r * 0.82); ctx.quadraticCurveTo(sd * r * 0.55, -r * 1.2, sd * r * 0.4, -r * 1.5);
-    ctx.quadraticCurveTo(sd * r * 0.3, -r * 1.15, sd * r * 0.3 + 14, -r * 0.8); ctx.closePath();
-    ctx.fill(); ctx.stroke();
+  const tail = seg[8];
+  ctx.fillStyle = fin; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(tail.x, tail.y);
+  ctx.lineTo(tail.x + r * 0.45, tail.y - r * 0.4); ctx.lineTo(tail.x + r * 0.3, tail.y);
+  ctx.lineTo(tail.x + r * 0.45, tail.y + r * 0.35); ctx.closePath(); ctx.fill(); ctx.stroke();
+  for (let i = seg.length - 1; i >= 0; i--) {
+    const p = seg[i];
+    ctx.fillStyle = fin; ctx.strokeStyle = ink; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(p.x - p.rr * 0.55, p.y - p.rr * 0.75); ctx.lineTo(p.x + p.rr * 0.25, p.y - p.rr * 1.65);
+    ctx.lineTo(p.x + p.rr * 0.5, p.y - p.rr * 0.8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = skin; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.rr, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = belly;
+    ctx.beginPath(); ctx.ellipse(p.x, p.y + p.rr * 0.45, p.rr * 0.68, p.rr * 0.32, 0, 0, TAU); ctx.fill();
   }
+  // horns, swept back
+  ctx.fillStyle = hit ? '#fff' : '#c04dff'; ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  for (const [hx, k] of [[0.12, 1], [-0.18, 0.8]]) {
+    const x0 = hx * r, y0 = -r * 0.38;
+    ctx.beginPath(); ctx.moveTo(x0 - r * 0.1, y0);
+    ctx.quadraticCurveTo(x0 + r * 0.15 * k, y0 - r * 0.55 * k, x0 + r * 0.65 * k, y0 - r * 0.8 * k);
+    ctx.quadraticCurveTo(x0 + r * 0.25 * k, y0 - r * 0.3 * k, x0 + r * 0.18, y0 + r * 0.05);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  // lower jaw, swinging open and shut
+  const jaw = 0.26 + 0.16 * (0.5 + 0.5 * Math.sin(t * 0.08));
+  const hx = 0, hy = r * 0.1;
+  const lowTip = [hx - r * 1.0 * Math.cos(jaw) - r * 0.1 * Math.sin(jaw), hy + r * 1.0 * Math.sin(jaw) + r * 0.1 * Math.cos(jaw)];
+  ctx.fillStyle = '#ff3fd0';
+  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(-r * 1.1, r * 0.06); ctx.lineTo(lowTip[0], lowTip[1]); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5a0a4a';
+  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(-r * 0.7, r * 0.12); ctx.lineTo(lowTip[0] * 0.65, hy + (lowTip[1] - hy) * 0.65); ctx.closePath(); ctx.fill();
+  ctx.save(); ctx.translate(hx, hy); ctx.rotate(-jaw);
+  ctx.fillStyle = skin; ctx.strokeStyle = ink; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(r * 0.1, -r * 0.08); ctx.lineTo(-r * 1.0, -r * 0.02);
+  ctx.quadraticCurveTo(-r * 1.08, r * 0.1, -r * 0.92, r * 0.16); ctx.lineTo(r * 0.1, r * 0.2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  fangs(-r * 0.92, -r * 0.2, -r * 0.03, 5, r * 0.12, -1);
+  ctx.restore();
+  // the head
+  ctx.fillStyle = skin; ctx.strokeStyle = ink; ctx.lineWidth = 7;
+  ctx.beginPath(); ctx.moveTo(r * 0.38, -r * 0.05);
+  ctx.quadraticCurveTo(r * 0.32, -r * 0.55, -r * 0.15, -r * 0.47);
+  ctx.quadraticCurveTo(-r * 0.7, -r * 0.36, -r * 1.2, -r * 0.06);
+  ctx.quadraticCurveTo(-r * 1.27, r * 0.06, -r * 1.1, r * 0.06);
+  ctx.lineTo(-r * 0.05, r * 0.1);
+  ctx.quadraticCurveTo(r * 0.32, r * 0.15, r * 0.38, -r * 0.05);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  fangs(-r * 1.06, -r * 0.18, r * 0.07, 6, r * 0.15, 1);
+  ctx.strokeStyle = ink; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-r * 1.08, -r * 0.08); ctx.lineTo(-r * 0.96, -r * 0.1); ctx.stroke();
+  ctx.strokeStyle = hit ? '#fff' : '#5a2f86'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(-r * 0.8, -r * 0.02); ctx.quadraticCurveTo(-r * 0.4, -r * 0.08, -r * 0.05, -r * 0.0); ctx.stroke();
+  meanEye(-r * 0.4, -r * 0.25, r * 0.17, b.angry ? '#ffe14d' : '#ff5cf0', skin, ink, 0.45);
 }
 
 // Warning stripes, then whatever the stripe was warning about.
@@ -2956,9 +3180,11 @@ function drawLevels() {
   // continue sits up front, and it's the only way back to round-2 levels
   const by = H - 96;
   if (cp) {
-    btn({ id: 'continue', x: W / 2 - 230, y: by, w: 460, h: 74,
-          label: '⏩ CONTINUE: LEVEL ' + cp + ' · ' + bossFor(cp).name, bg: '#8e44e8',
-          font: '800 ' + (cp > 9 ? 23 : 25) + 'px system-ui,sans-serif',
+    const label = '⏩ CONTINUE: LEVEL ' + cp + ' · ' + bossFor(cp).name;
+    let size = 25;   // shrink to fit, since boss names differ in length
+    do { ctx.font = '800 ' + size + 'px system-ui,sans-serif'; } while (ctx.measureText(label).width > 420 && --size > 16);
+    btn({ id: 'continue', x: W / 2 - 230, y: by, w: 460, h: 74, label, bg: '#8e44e8',
+          font: '800 ' + size + 'px system-ui,sans-serif',
           onTap: () => startRun(G.coop, false, cp) });
   } else {
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';

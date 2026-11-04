@@ -56,23 +56,28 @@ warning stripe with a yellow `!`** first, then hit — the lesson is "get out of
 
 | Level | World | Boss | What it does |
 |---|---|---|---|
-| 1 | Volcano | 🔥 Magma Lotl | Fans of 3 fireballs, sends blobs (the original) |
-| 2 | Jungle | 🐸 Big Croak | Hops around spitting seeds; every 3rd hop lands on your row and the tongue lashes out |
+| 1 | Volcano | 🌋 Magma Golem | A lump of lava rock with fists: fans of 3 fireballs, sends blobs |
+| 2 | Jungle | 🐸 Big Croak (swamp toad) | Hops around spitting seeds; every 3rd hop lands on your row and the tongue lashes out |
 | 3 | Desert | 🦀 King Pinch | Throws its claws like boomerangs (they come back!); sand walls with one gap |
-| 4 | Ice Cave | 🐡 Frosty Puff | Puffs up then pops a ring of ice shards; icicles drop from the roof |
+| 4 | Ice Cave | 🐡 Frostbite | Puffs up then pops a ring of ice shards; icicles drop from the roof |
 | 5 | Deep Sea | 🦑 Kraken | Tentacles slam up from the floor / down from the roof; ink shots |
-| 6 | Candy Reef | 👑 Jelly Queen | Wobbly shots, baby jellies, and she vanishes and reappears (sparkles show where) |
+| 6 | Candy Reef | 👑 Sting Queen | Wobbly shots, baby jellies, and she vanishes and reappears (sparkles show where) |
 | 7 | Shipwreck | 🦈 Ghost Shark | A pirate ghost shark: throws bones, then dashes across your whole row |
-| 8 | Storm Sea | ⚡ Shadow Lotl | The final boss: fireball fans, lightning columns, and gap walls |
+| 8 | Storm Sea | 🐉 Dark Leviathan | The final boss, a sea dragon: fireball fans, lightning columns, and gap walls |
 
-Beating the Shadow Lotl gives a `YOU BEAT ALL 8!` banner, a 👑 CHAMPION line on the
+Beating the Dark Leviathan gives a `YOU BEAT ALL 8!` banner, a 👑 CHAMPION line on the
 title screen, and round 2. Every boss turns "angry" (faster) below 40% HP, like before.
 
-Tuning: bullets stay near the old Magma Lotl pace (~2/sec calm, ~3.4 angry). A bot that
+Tuning: bullets stay near the original first boss's pace (~2/sec calm, ~3.4 angry). A bot that
 swims in circles without dodging gets hit about as often by every boss as by the Magma
-Lotl (10–15 hits/min); the Shadow Lotl is a little higher, the Ghost Shark lower. Boss HP
+Golem (10–15 hits/min); the Leviathan is a little higher, the Ghost Shark lower. Boss HP
 is now `60 + 13 per level` (it was `+28`), since the later bosses hit in more ways. Hearts
 also float by during boss fights now. Each boss is one object in the `BOSSES` array.
+
+**The bosses are monsters, not pets** (Lucas's call: "not cute, not axolotls"). They all
+share three things from the `meanEye` / `fangs` helpers: glowing eyes under a heavy
+brow (a V on two-eyed faces), teeth, and darker colours. No blush or round pet eyes.
+The axolotls are only ever the good guys now.
 
 ## Continue and the level picker
 
