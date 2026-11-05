@@ -85,8 +85,13 @@ The axolotls are only ever the good guys now.
   with `🔁 LEVEL 1` (R) and `🏠 MENU` under it.
 - **`🗺 LEVELS`** on the lotl screen (or `L`) opens a picker with every level you've
   reached, showing its boss. Locked ones are a `?`. A gold `⏩ CONTINUE` marks the level
-  you last lost on, and the big button at the bottom continues from there — including
-  round-2 levels past 8.
+  you last lost on, and the big button at the bottom continues from there.
+- The picker has one page per round of 8. Once you've reached level 9+, `◀ ROUND N` /
+  `ROUND N ▶` buttons (or the arrow keys) flip between rounds, so every level you've
+  ever reached stays pickable, not just the last one you lost on.
+- Progress lives in the browser's `localStorage` (`lotlquest.save.v1`), so it's per
+  browser and per device, and clearing site data resets it. The game also asks the
+  browser to keep that storage for good (`navigator.storage.persist()`).
 - The continue point is the last level you lost on (or quit from via the menu). Losing
   on level 1 doesn't overwrite it. A continued run starts at the beginning of that level,
   so there's time to charge the power before the boss.

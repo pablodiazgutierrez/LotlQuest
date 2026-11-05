@@ -67,6 +67,8 @@ const SAVE_KEY = 'lotlquest.save.v1';
 let save = { best: 0, orbsAll: 0, plays: 0, mute: false, bestStage: 1, seen: [], checkpoint: 0, champion: false };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} };
+// ask the browser to keep the save for good, so it isn't cleared to free up space
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 
 /* ---------- sound (tiny WebAudio blips) ---------- */
 const Snd = {
@@ -3108,7 +3110,9 @@ function wrapLeft(text, x, y, maxW, lh) {
 }
 
 /* ---------- level picker: jump to any level you've reached ---------- */
-const levelsOpen = () => clamp(save.bestStage || 1, 1, BOSSES.length);
+// One page per round of 8 bosses; every level ever reached stays open, round 2+ too.
+const levelsOpen = () => Math.max(1, save.bestStage || 1);
+const levelPage = () => Math.floor((G.levelSel - 1) / BOSSES.length);
 function openLevels() {
   G.pickingP2 = false;
   const cp = checkpoint();
@@ -3120,13 +3124,15 @@ function drawLevels() {
   bigTitle('PICK A LEVEL', 58, 44, '#ffd166');
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.font = '800 19px system-ui,sans-serif'; ctx.fillStyle = '#6b4a8f';
-  ctx.fillText((G.coop ? '👥 2 players  ·  ' : '') + 'Beat a boss to open the next level', W / 2, 98);
-
   const open = levelsOpen(), cp = checkpoint();
+  const page = levelPage(), pages = Math.ceil(open / BOSSES.length);
+  const roundTag = pages > 1 ? 'ROUND ' + (page + 1) + (page ? ' (tougher!)' : '') + '  ·  ' : '';
+  ctx.fillText((G.coop ? '👥 2 players  ·  ' : '') + roundTag + 'Beat a boss to open the next level', W / 2, 98);
+
   const gap = 18, tw = Math.min(250, (W - 120 - gap * 3) / 4), th = 196;
   const x0 = (W - (tw * 4 + gap * 3)) / 2, y0 = 120;
   for (let i = 0; i < BOSSES.length; i++) {
-    const lvl = i + 1, def = BOSSES[i], theme = STAGE_THEMES[i % STAGE_THEMES.length];
+    const lvl = page * BOSSES.length + i + 1, def = BOSSES[i], theme = STAGE_THEMES[i % STAGE_THEMES.length];
     const x = x0 + (i % 4) * (tw + gap), y = y0 + Math.floor(i / 4) * (th + gap);
     const isOpen = lvl <= open, sel = lvl === G.levelSel, isCp = lvl === cp;
     ctx.save();
@@ -3177,8 +3183,17 @@ function drawLevels() {
       } });
   }
 
-  // continue sits up front, and it's the only way back to round-2 levels
+  // continue sits up front: one tap back to wherever you lost last
   const by = H - 96;
+  // round pages either side of it
+  const pw = Math.min(170, W / 2 - 250), pfont = '800 ' + (pw < 160 ? 18 : 21) + 'px system-ui,sans-serif';
+  const toPage = n => { G.levelSel = Math.min(open, n * BOSSES.length + 1); Snd.ui(); };
+  if (page > 0)
+    btn({ id: 'lvlprev', x: 30, y: by + 6, w: pw, h: 62, label: '◀ ROUND ' + page, bg: '#3aa0ff', font: pfont,
+          onTap: () => toPage(page - 1) });
+  if (page < pages - 1)
+    btn({ id: 'lvlnext', x: W - 30 - pw, y: by + 6, w: pw, h: 62, label: 'ROUND ' + (page + 2) + ' ▶', bg: '#3aa0ff', font: pfont,
+          onTap: () => toPage(page + 1) });
   if (cp) {
     const label = '⏩ CONTINUE: LEVEL ' + cp + ' · ' + bossFor(cp).name;
     let size = 25;   // shrink to fit, since boss names differ in length
@@ -3189,7 +3204,8 @@ function drawLevels() {
   } else {
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     ctx.font = '700 19px system-ui,sans-serif'; ctx.fillStyle = '#6b4a8f';
-    ctx.fillText('Tap a level to play it. Wherever you lose, you can continue from there.', W / 2, by + 44);
+    fitOne('Tap a level to play it. Wherever you lose, you can continue from there.', W / 2, by + 44,
+           pages > 1 ? W - 2 * (pw + 50) : W - 80, 19, '700');
   }
   btn({ id: 'lvlback', shape: 'circle', x: 52, y: 52, r: 30, label: '↩', bg: 'rgba(255,255,255,0.85)', fg: '#4a2d6b',
         font: '28px system-ui,sans-serif', onTap: () => { G.screen = 'select'; } });
